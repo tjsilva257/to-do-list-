@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>SyncTask - Cross-Device To-Do List</title>
+
+  <!-- PWA & Mobile Meta -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#6366f1">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="SyncTask">
+  <link rel="apple-touch-icon" href="assets/icon-192.png">
+  <link rel="icon" type="image/svg+xml" href="assets/icon.svg">
+  <link rel="alternate icon" type="image/png" href="assets/icon.png">
+
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="css/style.css">
+
+  <!-- External Libraries (CDN with offline fallback) -->
+  <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+</head>
+<body>
+  <div class="app-wrapper">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar" aria-label="Main Navigation">
+      <div class="brand-section">
+        <a href="#" class="brand-logo">
+          <img src="assets/icon.svg" alt="SyncTask Logo" width="36" height="36">
+          <span class="brand-name">SyncTask</span>
+        </a>
+        <span class="brand-badge">v1.0</span>
+      </div>
+
+      <!-- Sync Status Widget -->
+      <div class="sync-status-card">
+        <div class="sync-status-header">
+          <span>Cross-Device Sync</span>
+          <span class="sync-indicator">
+            <span class="sync-dot" id="syncDot"></span>
+            <span id="syncText">Offline / Standalone</span>
+          </span>
+        </div>
+        <button class="sync-btn-quick" id="btnOpenSyncModal">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+          </svg>
+          <span>Sync Devices</span>
+        </button>
+      </div>
+
+      <!-- Category Navigation -->
+      <nav class="nav-section">
+        <div class="nav-title">Views</div>
+        <button class="nav-item active" data-filter="all">
+          <span class="nav-item-content"><span>📝</span> All Tasks</span>
+          <span class="nav-count" id="countAll">0</span>
+        </button>
+        <button class="nav-item" data-filter="today">
+          <span class="nav-item-content"><span>📅</span> Today</span>
+          <span class="nav-count" id="countToday">0</span>
+        </button>
+        <button class="nav-item" data-filter="upcoming">
+          <span class="nav-item-content"><span>⏳</span> Upcoming</span>
+          <span class="nav-count" id="countUpcoming">0</span>
+        </button>
+        <button class="nav-item" data-filter="completed">
+          <span class="nav-item-content"><span>✅</span> Completed</span>
+          <span class="nav-count" id="countCompleted">0</span>
+        </button>
+
+        <div class="nav-title">Categories</div>
+        <div id="categoryListContainer">
+          <!-- Dynamically populated categories -->
+        </div>
+      </nav>
+
+      <!-- Sidebar Footer -->
+      <div class="sidebar-footer">
+        <button class="btn-icon" id="btnToggleTheme" title="Toggle Dark/Light Mode" aria-label="Toggle Theme">
+          <span id="themeIcon">🌙</span>
+        </button>
+        <button class="btn-icon" id="btnBackup" title="Export / Backup Tasks" aria-label="Backup Data">
+          <span>💾</span>
+        </button>
+        <button class="btn-icon" id="btnSettings" title="App & Sync Settings" aria-label="Settings">
+          <span>⚙️</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+      <!-- Top Bar -->
+      <header class="top-bar">
+        <button class="btn-icon mobile-menu-toggle" id="btnToggleSidebar" aria-label="Toggle Navigation Menu">
+          <span>☰</span>
+        </button>
+
+        <div class="search-box">
+          <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          <input type="text" id="searchInput" placeholder="Search tasks or tags..." autocomplete="off">
+        </div>
+
+        <div class="header-actions">
+          <button class="btn-install" id="btnInstallPwa">
+            <span>📱</span> Install App
+          </button>
+        </div>
+      </header>
+
+      <!-- Add Task Form -->
+      <section class="add-task-card">
+        <div class="task-input-row">
+          <input type="text" id="taskTitleInput" placeholder="What needs to be done? (Press Enter to add)" autofocus>
+        </div>
+        <div class="task-meta-row">
+          <div class="meta-controls">
+            <select class="select-pill" id="taskPrioritySelect" aria-label="Task Priority">
+              <option value="low">🟢 Low Priority</option>
+              <option value="medium" selected>🟡 Medium Priority</option>
+              <option value="high">🔴 High Priority</option>
+            </select>
+
+            <select class="select-pill" id="taskCategorySelect" aria-label="Task Category">
+              <option value="Work">💼 Work</option>
+              <option value="Personal">👤 Personal</option>
+              <option value="Shopping">🛒 Shopping</option>
+              <option value="Study">📚 Study</option>
+            </select>
+
+            <input type="date" class="date-pill" id="taskDueDateInput" aria-label="Due Date">
+          </div>
+          <button class="btn-add-task" id="btnAddTask">
+            <span>+</span> Add Task
+          </button>
+        </div>
+      </section>
+
+      <!-- Filter Tabs -->
+      <nav class="filter-tabs" aria-label="Filter Tasks">
+        <button class="filter-tab active" data-tab="all">All</button>
+        <button class="filter-tab" data-tab="active">Active</button>
+        <button class="filter-tab" data-tab="today">Due Today</button>
+        <button class="filter-tab" data-tab="high">High Priority</button>
+        <button class="filter-tab" data-tab="completed">Completed</button>
+      </nav>
+
+      <!-- Tasks List -->
+      <section class="tasks-container" id="tasksContainer" aria-label="Tasks List">
+        <!-- Rendered by JS -->
+      </section>
+    </main>
+  </div>
+
+  <!-- Edit Task Modal (<dialog>) -->
+  <dialog id="editTaskModal">
+    <div class="modal-header">
+      <h3 class="modal-title">Edit Task</h3>
+      <button class="modal-close-btn" id="btnCloseEditModal">&times;</button>
+    </div>
+    <form method="dialog" id="editTaskForm">
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="editTaskTitle">Task Title</label>
+          <input type="text" id="editTaskTitle" required>
+        </div>
+
+        <div class="form-group">
+          <label for="editTaskNotes">Notes & Details</label>
+          <textarea id="editTaskNotes" rows="3" placeholder="Add extra notes or links..."></textarea>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div class="form-group">
+            <label for="editTaskPriority">Priority</label>
+            <select id="editTaskPriority">
+              <option value="low">🟢 Low</option>
+              <option value="medium">🟡 Medium</option>
+              <option value="high">🔴 High</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="editTaskCategory">Category</label>
+            <select id="editTaskCategory">
+              <option value="Work">💼 Work</option>
+              <option value="Personal">👤 Personal</option>
+              <option value="Shopping">🛒 Shopping</option>
+              <option value="Study">📚 Study</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="editTaskDueDate">Due Date</label>
+          <input type="date" id="editTaskDueDate">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-secondary" id="btnCancelEdit">Cancel</button>
+        <button type="submit" class="btn-primary" id="btnSaveEdit">Save Changes</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Cross-Device Sync & Settings Modal (<dialog>) -->
+  <dialog id="syncModal">
+    <div class="modal-header">
+      <h3 class="modal-title">Cross-Device Synchronization</h3>
+      <button class="modal-close-btn" id="btnCloseSyncModal">&times;</button>
+    </div>
+    <div class="sync-tabs">
+      <button class="sync-tab-btn active" data-synctab="p2p">Instant P2P Sync</button>
+      <button class="sync-tab-btn" data-synctab="local">Local Wi-Fi (XAMPP)</button>
+      <button class="sync-tab-btn" data-synctab="backup">Backup / Restore</button>
+    </div>
+
+    <!-- Tab 1: P2P Instant Sync (WebRTC) -->
+    <div class="sync-tab-content active" id="tabContentP2p">
+      <p style="font-size: 0.85rem; color: var(--text-muted);">
+        Connect your phone, laptop, or another device directly! No server or account required.
+      </p>
+      <div class="sync-code-display">
+        <span style="font-size: 0.8rem; color: var(--text-dim);">Your Device Sync Code</span>
+        <div class="sync-code-text" id="mySyncCodeDisplay">Generating...</div>
+        <button class="btn-secondary" style="font-size: 0.75rem; padding: 4px 10px;" id="btnCopySyncCode">📋 Copy Code</button>
+        <div class="qr-placeholder" id="qrContainer" title="Scan with your phone to sync">
+          <img id="qrCodeImg" src="" alt="Sync QR Code" style="display: none;">
+          <span id="qrLoading" style="font-size: 0.75rem; color: #475569;">QR Loading...</span>
+        </div>
+      </div>
+
+      <div class="form-group" style="margin-top: 8px;">
+        <label for="remoteSyncCodeInput">Connect to Another Device</label>
+        <div style="display: flex; gap: 8px;">
+          <input type="text" id="remoteSyncCodeInput" placeholder="Enter 6-char code (e.g. st-a1b2)" style="flex: 1;">
+          <button class="btn-primary" id="btnConnectP2P">Connect & Sync</button>
+        </div>
+      </div>
+
+      <div id="connectedPeersList" style="font-size: 0.8rem; color: var(--success); font-weight: 500;"></div>
+    </div>
+
+    <!-- Tab 2: Local Wi-Fi / REST Server Sync (XAMPP) -->
+    <div class="sync-tab-content" id="tabContentLocal">
+      <p style="font-size: 0.85rem; color: var(--text-muted);">
+        Synchronize across all devices connected to your home/office Wi-Fi via your XAMPP or custom server backend.
+      </p>
+      <div class="form-group">
+        <label for="serverApiUrlInput">Sync API Endpoint URL</label>
+        <input type="url" id="serverApiUrlInput" placeholder="http://192.168.1.X/to-do-list-/api/sync.php">
+        <span style="font-size: 0.75rem; color: var(--text-dim);">
+          Tip: Replace <code>localhost</code> with your computer's local IP address so phones can connect.
+        </span>
+      </div>
+      <div style="display: flex; gap: 10px; margin-top: 8px;">
+        <button class="btn-secondary" id="btnTestServerSync">Test Connection</button>
+        <button class="btn-primary" id="btnRunServerSync">Sync Now</button>
+      </div>
+      <div id="serverSyncResult" style="font-size: 0.82rem; margin-top: 6px;"></div>
+    </div>
+
+    <!-- Tab 3: Backup & Restore -->
+    <div class="sync-tab-content" id="tabContentBackup">
+      <p style="font-size: 0.85rem; color: var(--text-muted);">
+        Export your tasks to a JSON file to transfer between devices via USB, email, or cloud storage.
+      </p>
+      <div style="display: flex; gap: 12px; margin-top: 10px;">
+        <button class="btn-primary" id="btnExportJson">💾 Download Backup (.json)</button>
+        <label class="btn-secondary" style="cursor: pointer; display: inline-flex; align-items: center;">
+          📥 Restore Backup
+          <input type="file" id="importJsonFileInput" accept=".json" style="display: none;">
+        </label>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-secondary" id="btnCloseSyncModalFooter">Done</button>
+    </div>
+  </dialog>
+
+  <!-- Toast Notification Container -->
+  <div class="toast-container" id="toastContainer" aria-live="polite"></div>
+
+  <!-- Scripts -->
+  <script src="js/storage.js"></script>
+  <script src="js/sync.js"></script>
+  <script src="js/app.js"></script>
+
+  <!-- Service Worker Registration -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').catch((err) => {
+          console.log('Service Worker registration skipped:', err);
+        });
+      });
+    }
+  </script>
+</body>
+</html>
+
