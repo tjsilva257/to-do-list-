@@ -4,10 +4,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>SyncTask: Phantom Edition</title>
+  <title>SyncTask: Persona 5 Edition</title>
 
   <!-- PWA & Mobile Meta -->
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#e60012">
+  <meta name="theme-color" content="#d92323">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="SyncTask">
@@ -17,20 +19,25 @@
 
   <!-- Stylesheet -->
   <link rel="stylesheet" href="css/style.css">
+  <!-- Stylesheet with Cache Buster -->
+  <link rel="stylesheet" href="css/style.css?v=3.5">
 
   <!-- External Libraries & Synthesizer -->
   <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
   <script src="js/p5-audio.js"></script>
+  <script src="js/p5-audio.js?v=3.5"></script>
 </head>
 <body>
   <!-- Persona All-Out Attack Screen Wipe -->
+  <!-- All-Out Attack Full-Screen Wipe Overlay -->
   <div class="p5-all-out-attack" id="p5AoaOverlay">
     <div class="p5-aoa-slash-top"></div>
     <div class="p5-aoa-slash-bottom"></div>
     <div class="p5-aoa-banner" id="p5AoaBanner">
       ★ ALL-OUT ATTACK! ★<br>
       <span style="font-size: 0.45em; color: #fff; letter-spacing: 2px;">MISSION COMPLETE • HEART CHANGED</span>
+      <span style="font-size: 0.4em; color: #fff; letter-spacing: 2px;">HEART CHANGED • TARGET ELIMINATED</span>
     </div>
   </div>
 
@@ -40,6 +47,7 @@
       <div class="brand-section">
         <a href="#" class="brand-logo">
           <img src="assets/icon.svg" alt="Phantom Mask" width="40" height="40">
+          <img src="assets/icon.svg" alt="Phantom Mask">
           <span class="brand-name">PHANTOM</span>
         </a>
         <span class="brand-badge">P5 UI</span>
@@ -50,48 +58,100 @@
       <div class="sync-status-card">
         <div class="sync-status-header">
           <span>METANAV LINK</span>
+          <span>METANAV SYNC</span>
           <span class="sync-indicator">
             <span class="sync-dot" id="syncDot"></span>
             <span id="syncText">24/7 Cloud Active</span>
+            <span class="sync-dot online" id="syncDot"></span>
+            <span id="syncText">24/7 CLOUD</span>
           </span>
         </div>
         <button class="sync-btn-quick" id="btnOpenSyncModal">
           <span>⚡ SYNC METANAV</span>
+          <span>⚡ METANAV CONFIG</span>
         </button>
+      </div>
+
+      <!-- Velvet Radio BGM Widget -->
+      <div class="p5-bgm-card" id="bgmPanel">
+        <div class="p5-bgm-header">
+          <span class="p5-bgm-badge">★ VELVET RADIO</span>
+          <span class="p5-bgm-track">BENEATH THE MASK</span>
+        </div>
+        <div class="p5-bgm-controls">
+          <button class="p5-bgm-toggle" id="btnBgmToggle" title="Play / Pause Persona 5 BGM">
+            ▶ PLAY BGM
+          </button>
+          <div class="p5-bgm-vol-wrap">
+            <span class="p5-bgm-vol-label">VOL</span>
+            <input type="range" class="p5-bgm-slider" id="bgmVolumeSlider" min="0" max="1" step="0.05" value="0.35" title="BGM Volume">
+          </div>
+        </div>
       </div>
 
       <!-- Category Navigation -->
       <nav class="nav-section">
         <div class="nav-title">INFILTRATION TARGETS</div>
+        <div class="nav-title">TARGET MISSIONS</div>
         <button class="nav-item active" data-filter="all">
           <span class="nav-item-content"><span>🃏</span> ALL TARGETS</span>
+          <span class="nav-item-content">★ ALL TARGETS</span>
           <span class="nav-count" id="countAll">0</span>
         </button>
         <button class="nav-item" data-filter="today">
           <span class="nav-item-content"><span>📅</span> TODAY'S MISSION</span>
+          <span class="nav-item-content">★ TODAY'S PALACE</span>
           <span class="nav-count" id="countToday">0</span>
         </button>
         <button class="nav-item" data-filter="upcoming">
           <span class="nav-item-content"><span>⏳</span> DEADLINE</span>
+          <span class="nav-item-content">★ DEADLINE</span>
           <span class="nav-count" id="countUpcoming">0</span>
         </button>
         <button class="nav-item" data-filter="completed">
           <span class="nav-item-content"><span>💖</span> CHANGED HEARTS</span>
+          <span class="nav-item-content">★ CHANGED HEARTS</span>
           <span class="nav-count" id="countCompleted">0</span>
         </button>
 
         <div class="nav-title">ARCANAS / CONFIDANTS</div>
+        <div class="nav-title">CONFIDANTS & ARCANAS</div>
         <div id="categoryListContainer">
           <!-- Dynamically populated categories -->
+          <button class="nav-item" data-filter="category:Work">
+            <span class="nav-item-content">★ EMPEROR (WORK)</span>
+            <span class="nav-count" id="countWork">0</span>
+          </button>
+          <button class="nav-item" data-filter="category:Personal">
+            <span class="nav-item-content">★ HIEROPHANT (PERSONAL)</span>
+            <span class="nav-count" id="countPersonal">0</span>
+          </button>
+          <button class="nav-item" data-filter="category:Shopping">
+            <span class="nav-item-content">★ PRIESTESS (SHOPPING)</span>
+            <span class="nav-count" id="countShopping">0</span>
+          </button>
+          <button class="nav-item" data-filter="category:Study">
+            <span class="nav-item-content">★ STAR (STUDY)</span>
+            <span class="nav-count" id="countStudy">0</span>
+          </button>
         </div>
       </nav>
+
+      <!-- Persona Controller Guide -->
+      <div class="sc-footer">
+        <div class="sc-footer-row"><span class="sc-footer-key">↑↓</span><span>NAVIGATE</span></div>
+        <div class="sc-footer-row"><span class="sc-footer-key">ENTER</span><span>DISPATCH</span></div>
+      </div>
 
       <!-- Sidebar Footer -->
       <div class="sidebar-footer">
         <button class="btn-icon" id="btnToggleTheme" title="Switch Persona Theme (P5 Red / P3R Blue / P4G Yellow)" aria-label="Switch Theme">
           <span id="themeIcon">🎭</span>
+        <button class="btn-icon" id="btnToggleTheme" title="Cycle Persona Theme (P5 Red / P3R Blue / P4G Yellow)" aria-label="Switch Theme">
+          <span id="themeIcon">🎭 P5</span>
         </button>
         <button class="btn-icon" id="btnToggleSound" title="Toggle Sound FX" aria-label="Toggle Sound">
+        <button class="btn-icon" id="btnToggleSound" title="Toggle Sound SFX" aria-label="Toggle Sound">
           <span id="soundIcon">🔊</span>
         </button>
         <button class="btn-icon" id="btnBackup" title="Export Mission Log" aria-label="Backup Data">
@@ -113,6 +173,7 @@
 
         <div class="search-box">
           <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+          <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="11" cy="11" r="8"></circle>
             <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
           </svg>
@@ -122,11 +183,13 @@
         <div class="header-actions">
           <button class="btn-install" id="btnInstallPwa">
             <span>📱</span> INSTALL APP
+            INSTALL APP
           </button>
         </div>
       </header>
 
       <!-- Add Task Form (Calling Card Dispatcher) -->
+      <!-- Calling Card Task Dispatcher -->
       <section class="add-task-card">
         <div class="task-input-row">
           <input type="text" id="taskTitleInput" placeholder="TARGET MISSION / OBJECTIVE (PRESS ENTER)..." autofocus>
@@ -137,6 +200,9 @@
               <option value="low">🟢 0% MINOR SHADOW</option>
               <option value="medium" selected>🟡 50% STRONG SHADOW</option>
               <option value="high">🔴 99% PALACE RULER</option>
+              <option value="low">0% MINOR SHADOW</option>
+              <option value="medium" selected>50% STRONG SHADOW</option>
+              <option value="high">99% PALACE RULER</option>
             </select>
 
             <select class="select-pill" id="taskCategorySelect" aria-label="Arcana">
@@ -144,6 +210,10 @@
               <option value="Personal">☕ Hierophant (Personal)</option>
               <option value="Shopping">🛒 Priestess (Shopping)</option>
               <option value="Study">📚 Star (Study)</option>
+              <option value="Work">EMPEROR (WORK)</option>
+              <option value="Personal">HIEROPHANT (PERSONAL)</option>
+              <option value="Shopping">PRIESTESS (SHOPPING)</option>
+              <option value="Study">STAR (STUDY)</option>
             </select>
 
             <input type="date" class="date-pill" id="taskDueDateInput" aria-label="Palace Deadline">
@@ -317,19 +387,27 @@
   </dialog>
 
   <!-- Toast Notification Container -->
+  <!-- Toast Container -->
   <div class="toast-container" id="toastContainer" aria-live="polite"></div>
 
   <!-- Scripts -->
   <script src="js/storage.js"></script>
   <script src="js/sync.js"></script>
   <script src="js/app.js"></script>
+  <!-- Scripts with Cache Buster -->
+  <script src="js/storage.js?v=3.5"></script>
+  <script src="js/sync.js?v=3.5"></script>
+  <script src="js/app.js?v=3.5"></script>
 
   <!-- Service Worker Registration -->
+  <!-- Service Worker -->
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('./sw.js').catch((err) => {
           console.log('Service Worker skipped:', err);
+        navigator.serviceWorker.register('./sw.js?v=3.5').catch((err) => {
+          console.log('SW registration skipped:', err);
         });
       });
     }

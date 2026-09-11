@@ -130,9 +130,39 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
+  // --- Persona 5 Velvet Radio BGM Controls ---
+  const btnBgmToggle = document.getElementById('btnBgmToggle');
+  const bgmVolumeSlider = document.getElementById('bgmVolumeSlider');
+
+  if (btnBgmToggle && window.p5Audio) {
+    btnBgmToggle.addEventListener('click', () => {
+      const isPlaying = window.p5Audio.toggleBgm();
+      btnBgmToggle.textContent = isPlaying ? '⏸ PAUSE BGM' : '▶ PLAY BGM';
+      btnBgmToggle.classList.toggle('playing', isPlaying);
+    });
+  }
+
+  if (bgmVolumeSlider && window.p5Audio) {
+    bgmVolumeSlider.addEventListener('input', (e) => {
+      window.p5Audio.setBgmVolume(parseFloat(e.target.value));
+    });
+  }
+
+  // Authentic Hover Sound FX on all interactive Persona items
+  document.addEventListener('mouseover', (e) => {
+    const target = e.target.closest('.nav-item, .filter-tab, .btn-add-task, .btn-icon, .sync-btn-quick, .btn-task-action, .p5-bgm-toggle');
+    if (target && !target.dataset.p5HoverBound) {
+      target.dataset.p5HoverBound = '1';
+      target.addEventListener('mouseenter', () => {
+        window.p5Audio?.playHover();
+      });
+    }
+  });
+
   // --- Mobile Sidebar Toggle ---
   if (btnToggleSidebar) {
     btnToggleSidebar.addEventListener('click', () => {
+      window.p5Audio?.playSelect();
       sidebar.classList.toggle('open');
     });
     document.addEventListener('click', (e) => {
@@ -172,6 +202,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     let upcomingCount = 0;
     let completedCount = 0;
 
+    let workCount = 0;
+    let personalCount = 0;
+    let shoppingCount = 0;
+    let studyCount = 0;
+
     allTasks.forEach(t => {
       if (t.completed) {
         completedCount++;
@@ -179,6 +214,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         totalActive++;
         if (t.dueDate === todayStr) todayCount++;
         else if (t.dueDate && t.dueDate > todayStr) upcomingCount++;
+
+        if (t.category === 'Work') workCount++;
+        else if (t.category === 'Personal') personalCount++;
+        else if (t.category === 'Shopping') shoppingCount++;
+        else if (t.category === 'Study') studyCount++;
       }
     });
 
@@ -186,6 +226,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (countToday) countToday.textContent = todayCount;
     if (countUpcoming) countUpcoming.textContent = upcomingCount;
     if (countCompleted) countCompleted.textContent = completedCount;
+
+    const countWork = document.getElementById('countWork');
+    const countPersonal = document.getElementById('countPersonal');
+    const countShopping = document.getElementById('countShopping');
+    const countStudy = document.getElementById('countStudy');
+
+    if (countWork) countWork.textContent = workCount;
+    if (countPersonal) countPersonal.textContent = personalCount;
+    if (countShopping) countShopping.textContent = shoppingCount;
+    if (countStudy) countStudy.textContent = studyCount;
 
     // Filter Tasks
     let filtered = allTasks.filter(t => {
@@ -231,6 +281,9 @@ document.addEventListener('DOMContentLoaded', async () => {
           <div class="empty-state-icon">✨</div>
           <h3>No tasks found</h3>
           <p>You're all caught up! Add a new task above or adjust your filters.</p>
+          <div class="empty-state-icon" style="font-family: var(--p5-font); font-size: 3.5rem; color: var(--p5-yellow);">★</div>
+          <h3>NO TARGETS IN COGNITION</h3>
+          <p>The Metaverse is clear. Send a Calling Card above to claim a target heart.</p>
         </div>
       `;
       return;
@@ -245,18 +298,26 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (isDueToday) {
         dateBadgeClass = 'today';
         dateBadgeText = '📅 Today';
+        dateBadgeText = 'DEADLINE: TODAY';
       } else if (isOverdue) {
         dateBadgeClass = 'overdue';
         dateBadgeText = `⚠️ Overdue (${task.dueDate})`;
+        dateBadgeText = `OVERDUE (${task.dueDate})`;
+      } else if (task.dueDate) {
+        dateBadgeText = `DEADLINE: ${task.dueDate}`;
       }
 
       let priorityLabel = '50% STRONG SHADOW';
       if (task.priority === 'high') priorityLabel = '99% PALACE RULER';
       if (task.priority === 'low') priorityLabel = '0% MINOR SHADOW';
+      let priorityLabel = 'ALERT: 50% SHADOW';
+      if (task.priority === 'high') priorityLabel = 'ALERT: 99% RULER';
+      if (task.priority === 'low') priorityLabel = 'ALERT: 0% MINOR';
 
       return `
         <article class="task-card ${task.completed ? 'completed' : ''}" data-id="${task.id}">
           <label class="task-checkbox-container" title="${task.completed ? 'Mark incomplete' : 'Mark complete'}">
+          <label class="task-checkbox-container" title="${task.completed ? 'Mark incomplete' : 'Change Heart (Complete)'}">
             <input type="checkbox" class="task-checkbox-input" ${task.completed ? 'checked' : ''} data-action="toggle">
           </label>
 
@@ -266,12 +327,15 @@ document.addEventListener('DOMContentLoaded', async () => {
               <div class="task-actions">
                 <button class="btn-task-action" data-action="edit" title="Edit task">✏️</button>
                 <button class="btn-task-action delete" data-action="delete" title="Delete task">🗑️</button>
+                <button class="btn-task-action" data-action="edit" title="Edit Target">EDIT</button>
+                <button class="btn-task-action delete" data-action="delete" title="Delete Target">DELETE</button>
               </div>
             </div>
 
             <div class="task-badges">
               <span class="badge badge-priority-${task.priority || 'medium'}">${priorityLabel}</span>
               ${task.category ? `<span class="badge badge-category">📁 ${escapeHtml(task.category)}</span>` : ''}
+              ${task.category ? `<span class="badge badge-category">[${escapeHtml(task.category).toUpperCase()}]</span>` : ''}
               ${task.dueDate ? `<span class="badge badge-date ${dateBadgeClass}">${dateBadgeText}</span>` : ''}
             </div>
 
@@ -439,6 +503,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   filterTabs.forEach(tab => {
     tab.addEventListener('click', () => {
+      window.p5Audio?.playSelect();
       filterTabs.forEach(t => t.classList.remove('active'));
       tab.classList.add('active');
       currentFilter = tab.getAttribute('data-tab');
@@ -449,14 +514,24 @@ document.addEventListener('DOMContentLoaded', async () => {
   navItems.forEach(item => {
     item.addEventListener('click', () => {
       navItems.forEach(i => i.classList.remove('active'));
+  const navSection = document.querySelector('.nav-section');
+  if (navSection) {
+    navSection.addEventListener('click', (e) => {
+      const item = e.target.closest('.nav-item');
+      if (!item) return;
+      window.p5Audio?.playSelect();
+      document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
       item.classList.add('active');
       currentFilter = item.getAttribute('data-filter');
+      currentFilter = item.getAttribute('data-filter') || 'all';
       renderTasks();
       if (window.innerWidth <= 820) {
+      if (window.innerWidth <= 860) {
         sidebar.classList.remove('open');
       }
     });
   });
+  }
 
   // --- Sync Modal & Tabs ---
   async function openSyncModal() {

@@ -1,9 +1,20 @@
 /* ==========================================================================
    SyncTask: PERSONA EDITION (P5 / P3R / P4G High-Energy Comic UI)
    Inspired by Persona 5, Persona 3 Reload, and open-source P5 UI projects
+   PERSONA 5 THEME - Authentic Persona 5 UI & Animations
+   Inspired by and utilizing assets from ffaneto/persona5-website-theme
    ========================================================================== */
 
 @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:ital,wght@0,400;0,700;0,900;1,700;1,900&display=swap');
+@font-face {
+  font-family: 'Persona5Main';
+  src: url('../assets/Persona5main.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:ital,wght@0,700;0,900;1,700;1,900&display=swap');
 
 :root {
   /* Default: Persona 5 Phantom Red & Black */
@@ -12,6 +23,10 @@
   --p5-black: #0d0d11;
   --p5-surface: #14141a;
   --p5-surface-card: #1c1c24;
+  --p5-black: #0d0d0d;
+  --p5-red: #d92323;
+  --p5-dark-red: #732424;
+  --p5-gray: #22222a;
   --p5-white: #ffffff;
   --p5-yellow: #ffe600;
   --p5-cyan: #00f0ff;
@@ -38,6 +53,10 @@
   --p5-shadow-yellow: 5px 5px 0px var(--p5-yellow);
   --p5-shadow-lg: 8px 8px 0px #000000;
   --transition: all 0.16s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+  --p5-yellow: #ffd000;
+  --p5-cyan: #0dd9ff;
+  --p5-font: 'Persona5Main', 'Bebas Neue', 'Impact', sans-serif;
+  --p5-font-sub: 'Montserrat', system-ui, sans-serif;
 }
 
 /* --- Persona 3 Reload Theme (Dark Hour Velvet Blue) --- */
@@ -52,6 +71,12 @@
   --p5-yellow: #38bdf8;
   --p5-shadow: 5px 5px 0px #030712;
   --p5-shadow-red: 5px 5px 0px #00d2ff;
+  --p5-black: #050b14;
+  --p5-red: #0077ff;
+  --p5-dark-red: #022b68;
+  --p5-gray: #0f1c30;
+  --p5-yellow: #00f0ff;
+  --p5-cyan: #ffffff;
 }
 
 /* --- Persona 4 Golden Theme (Inaba Retro Pop Yellow) --- */
@@ -66,22 +91,35 @@
   --p5-yellow: #f97316;
   --p5-shadow: 5px 5px 0px #000000;
   --p5-shadow-red: 5px 5px 0px #ffd000;
+  --p5-black: #0c0900;
+  --p5-red: #f59e0b;
+  --p5-dark-red: #78350f;
+  --p5-gray: #291f05;
+  --p5-yellow: #ffe600;
+  --p5-cyan: #38bdf8;
 }
 
 * {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
+  box-sizing: border-box;
 }
 
 body {
   font-family: var(--p5-font-body);
   background-color: var(--bg);
   color: var(--text-main);
+html, body {
+  width: 100%;
   min-height: 100vh;
   display: flex;
+  background-color: var(--p5-black);
+  color: var(--p5-white);
+  font-family: var(--p5-font-sub);
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
+}
 
   /* Iconic Persona 5 Halftone Screentone Pattern */
   background-image:
@@ -89,10 +127,18 @@ body {
     radial-gradient(rgba(255, 255, 255, 0.04) 15%, transparent 16%);
   background-size: 24px 24px, 12px 12px;
   background-position: 0 0, 6px 6px;
+/* Authentic Persona 5 Crimson & Dark Atmosphere */
+body {
+  background:
+    radial-gradient(circle at 15% 15%, rgba(217,35,35,0.45), rgba(13,13,13,0.94) 45%),
+    linear-gradient(140deg, #0d0d0d 0%, #732424 55%, #0d0d0d 100%);
   background-attachment: fixed;
+  background-size: cover;
+  position: relative;
 }
 
 /* Floating Persona Aesthetic Background Slashes */
+/* Halftone Comic Screentone Texture */
 body::before {
   content: "";
   position: fixed;
@@ -103,11 +149,32 @@ body::before {
   background: 
     linear-gradient(135deg, transparent 45%, rgba(230, 0, 18, 0.08) 46%, rgba(230, 0, 18, 0.08) 54%, transparent 55%),
     linear-gradient(45deg, transparent 48%, rgba(0, 0, 0, 0.3) 49%, rgba(0, 0, 0, 0.3) 52%, transparent 53%);
+  inset: 0;
+  background-image: radial-gradient(rgba(0,0,0,0.3) 15%, transparent 16%), radial-gradient(rgba(217,35,35,0.15) 15%, transparent 16%);
+  background-size: 16px 16px, 8px 8px;
+  background-position: 0 0, 4px 4px;
   pointer-events: none;
   z-index: 0;
 }
 
 /* Layout Wrapper */
+/* Subtle Joker Silhouette Art in Bottom-Right Corner */
+body::after {
+  content: "";
+  position: fixed;
+  right: -40px;
+  bottom: -40px;
+  width: 480px;
+  height: 540px;
+  background-image: url('../assets/hero.png');
+  background-repeat: no-repeat;
+  background-size: contain;
+  opacity: 0.12;
+  pointer-events: none;
+  z-index: 0;
+  filter: grayscale(100%) contrast(150%);
+}
+
 .app-wrapper {
   display: flex;
   width: 100%;
@@ -118,28 +185,58 @@ body::before {
 
 /* ==========================================================================
    SIDEBAR (The Velvet Room & Phantom HQ)
+   SIDEBAR (Metaverse Navigator Menu)
    ========================================================================== */
 .sidebar {
   width: 320px;
   background: var(--bg-surface);
   border-right: 4px solid #000;
+  background: rgba(13, 13, 13, 0.95);
+  border-right: 5px solid #000;
   display: flex;
   flex-direction: column;
   padding: 24px 20px;
+  padding: 28px 20px;
   gap: 20px;
   flex-shrink: 0;
   box-shadow: 8px 0 0px rgba(0,0,0,0.6);
+  box-shadow: 10px 0 0px rgba(0,0,0,0.8);
+  position: relative;
   z-index: 100;
   position: relative;
+  backdrop-filter: blur(8px);
 }
 
 /* Top Brand Section */
+/* White & Red Accent Stripes */
+.sidebar::before {
+  content: "";
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: var(--p5-white);
+}
+
+.sidebar::after {
+  content: "";
+  position: absolute;
+  right: 8px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: rgba(255, 255, 255, 0.25);
+}
+
 .brand-section {
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding-bottom: 8px;
   border-bottom: 3px solid var(--primary);
+  padding-bottom: 12px;
+  border-bottom: 4px solid var(--p5-red);
 }
 
 .brand-logo {
@@ -150,6 +247,8 @@ body::before {
   color: var(--text-main);
   transform: skewX(var(--p5-skew));
   transition: var(--transition);
+  color: var(--p5-white);
+  transform: skewX(-6deg);
 }
 
 .brand-logo:hover {
@@ -160,16 +259,22 @@ body::before {
   width: 44px;
   height: 44px;
   filter: drop-shadow(3px 3px 0px #000);
+  width: 46px;
+  height: 46px;
+  filter: drop-shadow(4px 4px 0px #000);
   animation: p5-wiggle 3s infinite ease-in-out;
 }
 
 .brand-name {
   font-family: var(--p5-font-display);
   font-size: 2rem;
+  font-family: var(--p5-font);
+  font-size: 2.3rem;
   letter-spacing: 2px;
   color: #fff;
   text-shadow: 3px 3px 0px var(--primary), 5px 5px 0px #000;
   transform: rotate(-1deg);
+  text-shadow: 3px 3px 0px var(--p5-red), 6px 6px 0px #000;
 }
 
 .brand-badge {
@@ -189,26 +294,37 @@ body::before {
   font-family: var(--p5-font-display);
   font-size: 0.95rem;
   letter-spacing: 2px;
+  font-family: var(--p5-font);
+  font-size: 1.1rem;
+  letter-spacing: 3px;
   color: var(--p5-yellow);
   background: #000;
   padding: 4px 10px;
   transform: skewX(-10deg);
   box-shadow: 3px 3px 0px var(--primary);
+  padding: 4px 12px;
+  transform: skewX(-10deg) rotate(-1deg);
+  box-shadow: 3px 3px 0px var(--p5-red);
   display: inline-block;
   margin-top: -6px;
   font-style: italic;
+  margin-top: -8px;
 }
 
 /* Sync Card (Metanav Comm) */
+/* Sync Box */
 .sync-status-card {
   background: #000;
   border: 2px solid var(--primary);
+  border: 3px solid var(--p5-red);
   padding: 14px;
   display: flex;
   flex-direction: column;
   gap: 10px;
   transform: skewX(var(--p5-skew));
   box-shadow: var(--p5-shadow-red);
+  transform: skewX(-6deg);
+  box-shadow: 5px 5px 0px #000;
 }
 
 .sync-status-header {
@@ -218,7 +334,10 @@ body::before {
   font-family: var(--p5-font-display);
   font-size: 1.1rem;
   letter-spacing: 1px;
+  font-family: var(--p5-font);
+  font-size: 1.2rem;
   color: var(--p5-yellow);
+  letter-spacing: 1.5px;
 }
 
 .sync-indicator {
@@ -228,6 +347,7 @@ body::before {
   font-family: var(--p5-font-body);
   font-size: 0.8rem;
   font-weight: 700;
+  font-weight: 800;
   color: #fff;
 }
 
@@ -235,6 +355,7 @@ body::before {
   width: 10px;
   height: 10px;
   background: #555;
+  background: #666;
   clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
 }
 
@@ -251,12 +372,16 @@ body::before {
 
 .sync-btn-quick {
   background: var(--primary);
+  background: var(--p5-red);
   color: #fff;
   border: 2px solid #000;
   padding: 10px 14px;
   font-family: var(--p5-font-display);
   font-size: 1.15rem;
   letter-spacing: 1.5px;
+  font-family: var(--p5-font);
+  font-size: 1.25rem;
+  letter-spacing: 2px;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -264,6 +389,7 @@ body::before {
   gap: 8px;
   box-shadow: 3px 3px 0px #000;
   transition: var(--transition);
+  transition: transform 0.15s ease, background 0.15s ease;
 }
 
 .sync-btn-quick:hover {
@@ -274,10 +400,12 @@ body::before {
 }
 
 /* Sidebar Navigation (Infiltration Targets / Confidants) */
+/* Navigation Section */
 .nav-section {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  gap: 10px;
   flex: 1;
   overflow-y: auto;
   padding-right: 4px;
@@ -286,9 +414,12 @@ body::before {
 .nav-title {
   font-family: var(--p5-font-display);
   font-size: 1.15rem;
+  font-family: var(--p5-font);
+  font-size: 1.2rem;
   letter-spacing: 2px;
   color: var(--p5-yellow);
   margin: 14px 0 6px 4px;
+  margin: 12px 0 4px 4px;
   text-shadow: 2px 2px 0px #000;
   display: flex;
   align-items: center;
@@ -302,13 +433,17 @@ body::before {
 }
 
 /* Persona Cutout Slanted Menu Items */
+/* Authentic Persona 5 Menu Rows with Wiggle Polygon & Slashed Highlight */
 .nav-item {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 10px 16px;
+  padding: 12px 18px;
   background: #000;
   border: 2px solid rgba(255,255,255,0.15);
+  border: 2px solid rgba(255,255,255,0.25);
   color: #fff;
   cursor: pointer;
   font-family: var(--p5-font-display);
@@ -317,22 +452,34 @@ body::before {
   transform: skewX(var(--p5-skew));
   box-shadow: 3px 3px 0px rgba(0,0,0,0.8);
   transition: var(--transition);
+  font-family: var(--p5-font);
+  font-size: 1.5rem;
+  letter-spacing: 2px;
+  transform: skewX(-8deg);
+  box-shadow: 4px 4px 0px #000;
+  transition: transform 0.18s cubic-bezier(0.22, 1, 0.36, 1), background 0.15s ease, color 0.15s ease;
   width: 100%;
   text-align: left;
   position: relative;
   overflow: hidden;
+  outline: none;
 }
 
 .nav-item:hover {
+/* Wiggle Cyan Polygon Highlight from ffaneto repo */
+.nav-item:hover, .nav-item.active {
   background: #fff;
   color: #000;
   border-color: #000;
   transform: skewX(var(--p5-skew)) translateX(8px);
   box-shadow: -4px 4px 0px var(--primary), 4px 4px 0px #000;
+  transform: skewX(-8deg) translateX(12px);
+  box-shadow: -6px 6px 0px var(--p5-red), 6px 6px 0px #000;
 }
 
 .nav-item.active {
   background: var(--primary);
+  background: var(--p5-red);
   color: #fff;
   border-color: #000;
   transform: skewX(var(--p5-skew)) translateX(12px);
@@ -342,6 +489,16 @@ body::before {
 .nav-item.active .nav-count {
   background: #000;
   color: var(--p5-yellow);
+.nav-item.active::before {
+  content: "";
+  position: absolute;
+  left: -8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 12px;
+  height: 70%;
+  background: var(--p5-yellow);
+  animation: p5-wiggle-poly 0.66s ease-in-out infinite;
 }
 
 .nav-item-content {
@@ -356,23 +513,36 @@ body::before {
   background: rgba(255, 255, 255, 0.15);
   padding: 2px 8px;
   border-radius: 0;
+  font-family: var(--p5-font);
+  font-size: 1.2rem;
+  background: #1a1a1a;
+  color: var(--p5-yellow);
+  padding: 2px 10px;
+  border: 1px solid #333;
+}
+
+.nav-item.active .nav-count {
+  background: #000;
   color: #fff;
   box-shadow: 2px 2px 0px #000;
 }
 
 /* Sidebar Footer & Persona Theme Switcher */
+/* Sidebar Footer */
 .sidebar-footer {
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding-top: 14px;
   border-top: 3px solid #000;
+  border-top: 4px solid #000;
   gap: 8px;
 }
 
 .btn-icon {
   background: #000;
   border: 2px solid var(--primary);
+  border: 2px solid var(--p5-red);
   color: #fff;
   width: 44px;
   height: 44px;
@@ -381,8 +551,10 @@ body::before {
   justify-content: center;
   cursor: pointer;
   transform: skewX(var(--p5-skew));
+  transform: skewX(-6deg);
   box-shadow: 3px 3px 0px #000;
   transition: var(--transition);
+  transition: transform 0.15s ease, background 0.15s ease;
   font-size: 1.2rem;
 }
 
@@ -391,11 +563,13 @@ body::before {
   color: #000;
   border-color: #000;
   transform: skewX(var(--p5-skew)) translate(-2px, -2px);
+  transform: skewX(-6deg) translate(-2px, -2px);
   box-shadow: 5px 5px 0px #000;
 }
 
 /* ==========================================================================
    MAIN WORKSPACE (Metaverse Infiltration Board)
+   MAIN WORKSPACE (Target Mission Board)
    ========================================================================== */
 .main-content {
   flex: 1;
@@ -403,10 +577,12 @@ body::before {
   flex-direction: column;
   padding: 28px 40px;
   max-width: 1120px;
+  max-width: 1100px;
   margin: 0 auto;
   width: 100%;
   gap: 24px;
   position: relative;
+  z-index: 1;
 }
 
 /* Top Bar */
@@ -425,8 +601,10 @@ body::before {
 .search-box {
   flex: 1;
   max-width: 480px;
+  max-width: 500px;
   position: relative;
   transform: skewX(var(--p5-skew));
+  transform: skewX(-6deg);
 }
 
 .search-box input {
@@ -436,17 +614,22 @@ body::before {
   padding: 12px 20px 12px 48px;
   color: #fff;
   font-family: var(--p5-font-body);
+  font-family: var(--p5-font-sub);
   font-weight: 700;
   font-size: 0.95rem;
+  font-size: 1rem;
   outline: none;
   box-shadow: var(--p5-shadow-red);
   transition: var(--transition);
+  box-shadow: 5px 5px 0px var(--p5-red);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .search-box input:focus {
   border-color: var(--p5-yellow);
   background: #111;
   box-shadow: var(--p5-shadow-yellow);
+  box-shadow: 5px 5px 0px var(--p5-yellow);
 }
 
 .search-icon {
@@ -455,10 +638,12 @@ body::before {
   top: 50%;
   transform: translateY(-50%);
   color: var(--primary);
+  color: var(--p5-red);
   pointer-events: none;
 }
 
 /* PWA Install Button */
+/* PWA Install */
 .btn-install {
   display: none;
   background: var(--p5-yellow);
@@ -467,6 +652,9 @@ body::before {
   padding: 10px 20px;
   font-family: var(--p5-font-display);
   font-size: 1.25rem;
+  padding: 10px 22px;
+  font-family: var(--p5-font);
+  font-size: 1.4rem;
   letter-spacing: 2px;
   cursor: pointer;
   align-items: center;
@@ -474,6 +662,9 @@ body::before {
   transform: skewX(var(--p5-skew)) rotate(-2deg);
   box-shadow: var(--p5-shadow-lg);
   transition: var(--transition);
+  transform: skewX(-8deg) rotate(-2deg);
+  box-shadow: 6px 6px 0px #000;
+  transition: transform 0.15s ease, background 0.15s ease;
 }
 
 .btn-install.visible {
@@ -483,35 +674,62 @@ body::before {
 .btn-install:hover {
   background: #fff;
   transform: skewX(var(--p5-skew)) rotate(0deg) scale(1.06);
+  transform: skewX(-8deg) rotate(0deg) scale(1.05);
 }
 
 /* ==========================================================================
    CALLING CARD TASK CREATOR (Take Your Heart / Mission Dispatch)
+   CALLING CARD TASK DISPATCHER
    ========================================================================== */
 .add-task-card {
   background: #000;
   border: 4px solid var(--primary);
   padding: 20px 24px;
   box-shadow: var(--p5-shadow-lg), 0 0 20px rgba(230, 0, 18, 0.3);
+  border: 4px solid var(--p5-red);
+  padding: 24px 26px;
+  box-shadow: 8px 8px 0px #000, 0 0 24px rgba(217, 35, 35, 0.4);
   display: flex;
   flex-direction: column;
   gap: 16px;
   position: relative;
   transform: rotate(-0.5deg);
+  overflow: hidden;
 }
 
 /* Calling Card Top Label Ribbon */
+.add-task-card::after {
+  content: "";
+  position: absolute;
+  right: -15px;
+  bottom: -20px;
+  width: 140px;
+  height: 140px;
+  background-image: url('../assets/jokerface2.png');
+  background-repeat: no-repeat;
+  background-size: contain;
+  opacity: 0.12;
+  pointer-events: none;
+  filter: grayscale(100%) contrast(150%);
+}
+
 .add-task-card::before {
   content: "★ CALLING CARD ★ TARGET MISSION";
+  content: "★ PHANTOM CALLING CARD ★ TARGET MISSION";
   position: absolute;
   top: -14px;
+  top: -15px;
   left: 24px;
   background: var(--primary);
+  background: var(--p5-red);
   color: #fff;
   font-family: var(--p5-font-display);
   font-size: 1.1rem;
+  font-family: var(--p5-font);
+  font-size: 1.25rem;
   letter-spacing: 2px;
   padding: 2px 14px;
+  padding: 3px 16px;
   border: 2px solid #000;
   transform: skewX(-12deg);
   box-shadow: 3px 3px 0px #000;
@@ -529,19 +747,28 @@ body::before {
   background: #14141a;
   border: 2px solid rgba(255,255,255,0.2);
   padding: 12px 16px;
+  background: #141418;
+  border: 2px solid rgba(255,255,255,0.25);
+  padding: 14px 18px;
   color: #fff;
   font-family: var(--p5-font-body);
   font-size: 1.15rem;
+  font-family: var(--p5-font-sub);
+  font-size: 1.2rem;
   font-weight: 700;
   outline: none;
   transform: skewX(var(--p5-skew));
   box-shadow: inset 2px 2px 6px rgba(0,0,0,0.6);
   transition: var(--transition);
+  transform: skewX(-6deg);
+  box-shadow: inset 3px 3px 6px rgba(0,0,0,0.8);
+  transition: border-color 0.15s ease;
 }
 
 .task-input-row input:focus {
   border-color: var(--p5-yellow);
   background: #1a1a24;
+  background: #1c1c24;
 }
 
 .task-meta-row {
@@ -552,6 +779,8 @@ body::before {
   gap: 14px;
   padding-top: 10px;
   border-top: 2px dashed rgba(255, 255, 255, 0.15);
+  padding-top: 12px;
+  border-top: 2px dashed rgba(255, 255, 255, 0.2);
 }
 
 .meta-controls {
@@ -563,17 +792,23 @@ body::before {
 
 .select-pill, .date-pill {
   background: #14141a;
+  background: #141418;
   border: 2px solid #000;
   color: #fff;
   font-family: var(--p5-font-body);
+  font-family: var(--p5-font-sub);
   font-weight: 700;
   font-size: 0.85rem;
   padding: 8px 12px;
+  font-size: 0.9rem;
+  padding: 8px 14px;
   outline: none;
   cursor: pointer;
   transform: skewX(var(--p5-skew));
   box-shadow: 3px 3px 0px var(--primary);
   transition: var(--transition);
+  transform: skewX(-6deg);
+  box-shadow: 3px 3px 0px var(--p5-red);
 }
 
 .select-pill:focus, .date-pill:focus {
@@ -584,29 +819,37 @@ body::before {
 /* Send Calling Card Button */
 .btn-add-task {
   background: var(--primary);
+  background: var(--p5-red);
   color: #fff;
   border: 3px solid #000;
   padding: 12px 26px;
   font-family: var(--p5-font-display);
   font-size: 1.45rem;
+  padding: 12px 28px;
+  font-family: var(--p5-font);
+  font-size: 1.6rem;
   letter-spacing: 2px;
   cursor: pointer;
   display: flex;
   align-items: center;
   gap: 8px;
   transform: skewX(var(--p5-skew)) rotate(-1deg);
+  transform: skewX(-8deg) rotate(-1deg);
   box-shadow: 5px 5px 0px #000;
   transition: var(--transition);
+  transition: transform 0.15s ease, background 0.15s ease;
 }
 
 .btn-add-task:hover {
   background: var(--p5-yellow);
   color: #000;
   transform: skewX(var(--p5-skew)) rotate(1deg) scale(1.05);
+  transform: skewX(-8deg) rotate(1deg) scale(1.04);
   box-shadow: 7px 7px 0px #000;
 }
 
 /* Filter Tabs (Slanted Persona Style) */
+/* Filter Tabs */
 .filter-tabs {
   display: flex;
   align-items: center;
@@ -618,9 +861,12 @@ body::before {
 .filter-tab {
   background: #000;
   border: 2px solid rgba(255,255,255,0.2);
+  border: 2px solid rgba(255,255,255,0.25);
   padding: 8px 18px;
   font-family: var(--p5-font-display);
   font-size: 1.25rem;
+  font-family: var(--p5-font);
+  font-size: 1.35rem;
   letter-spacing: 1.5px;
   color: #fff;
   cursor: pointer;
@@ -628,6 +874,9 @@ body::before {
   transform: skewX(var(--p5-skew));
   box-shadow: 3px 3px 0px rgba(0,0,0,0.7);
   transition: var(--transition);
+  transform: skewX(-8deg);
+  box-shadow: 3px 3px 0px rgba(0,0,0,0.8);
+  transition: transform 0.15s ease, background 0.15s ease;
 }
 
 .filter-tab:hover {
@@ -636,19 +885,25 @@ body::before {
   border-color: #000;
   transform: skewX(var(--p5-skew)) translateY(-2px);
   box-shadow: 4px 4px 0px var(--primary);
+  transform: skewX(-8deg) translateY(-2px);
+  box-shadow: 4px 4px 0px var(--p5-red);
 }
 
 .filter-tab.active {
   background: var(--primary);
+  background: var(--p5-red);
   color: #fff;
   border-color: #000;
   font-weight: 900;
   transform: skewX(var(--p5-skew)) translateY(-3px);
   box-shadow: -3px 3px 0px var(--p5-yellow), 4px 4px 0px #000;
+  transform: skewX(-8deg) translateY(-3px);
+  box-shadow: -4px 4px 0px var(--p5-yellow), 4px 4px 0px #000;
 }
 
 /* ==========================================================================
    TASK CARDS (Target Infiltration List)
+   TASK CARDS (Cutout Targets)
    ========================================================================== */
 .tasks-container {
   display: flex;
@@ -663,6 +918,10 @@ body::before {
   border: 3px dashed rgba(255, 255, 255, 0.2);
   transform: skewX(var(--p5-skew));
   box-shadow: var(--p5-shadow);
+  background: rgba(0,0,0,0.7);
+  border: 3px dashed rgba(255, 255, 255, 0.25);
+  transform: skewX(-6deg);
+  box-shadow: 8px 8px 0px #000;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -677,6 +936,8 @@ body::before {
 .empty-state h3 {
   font-family: var(--p5-font-display);
   font-size: 2.2rem;
+  font-family: var(--p5-font);
+  font-size: 2.4rem;
   letter-spacing: 2px;
   color: var(--p5-yellow);
 }
@@ -692,6 +953,9 @@ body::before {
   transform: skewX(var(--p5-skew));
   box-shadow: 6px 6px 0px #000, 6px 6px 0px rgba(230, 0, 18, 0.5);
   transition: var(--transition);
+  transform: skewX(-6deg);
+  box-shadow: 6px 6px 0px #000, 6px 6px 0px var(--p5-red);
+  transition: transform 0.15s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.15s ease;
   position: relative;
   overflow: hidden;
 }
@@ -700,6 +964,8 @@ body::before {
   border-color: var(--p5-yellow);
   transform: skewX(var(--p5-skew)) translateX(8px);
   box-shadow: -4px 6px 0px var(--primary), 8px 8px 0px #000;
+  transform: skewX(-6deg) translateX(10px);
+  box-shadow: -6px 6px 0px var(--p5-red), 8px 8px 0px #000;
 }
 
 /* Completed Task (Cognition Altered / Changed Heart) */
@@ -707,17 +973,21 @@ body::before {
   opacity: 0.55;
   background: #111116;
   border-color: #444;
+  border-color: #555;
 }
 
 .task-card.completed .task-title {
   text-decoration: line-through;
   text-decoration-color: var(--primary);
+  text-decoration-color: var(--p5-red);
   text-decoration-thickness: 3px;
   color: var(--p5-text-muted);
+  color: #888;
 }
 
 .task-card.completed::after {
   content: "CHANGED";
+  content: "HEART CHANGED";
   position: absolute;
   right: 60px;
   top: 10px;
@@ -725,8 +995,13 @@ body::before {
   font-size: 2rem;
   color: var(--primary);
   border: 3px solid var(--primary);
+  font-family: var(--p5-font);
+  font-size: 2.2rem;
+  color: var(--p5-red);
+  border: 3px solid var(--p5-red);
   padding: 2px 14px;
   transform: rotate(-14deg);
+  transform: rotate(-12deg);
   pointer-events: none;
   letter-spacing: 3px;
   opacity: 0.85;
@@ -751,11 +1026,13 @@ body::before {
   cursor: pointer;
   transform: rotate(4deg);
   transition: var(--transition);
+  transform: rotate(3deg);
   outline: none;
 }
 
 .task-checkbox-input:checked {
   background: var(--primary);
+  background: var(--p5-red);
   border-color: var(--p5-yellow);
   box-shadow: 2px 2px 0px #000;
 }
@@ -789,6 +1066,8 @@ body::before {
 .task-title {
   font-family: var(--p5-font-body);
   font-size: 1.15rem;
+  font-family: var(--p5-font-sub);
+  font-size: 1.2rem;
   font-weight: 900;
   color: #fff;
   word-break: break-word;
@@ -805,8 +1084,11 @@ body::before {
 .badge {
   font-family: var(--p5-font-display);
   font-size: 1.05rem;
+  font-family: var(--p5-font);
+  font-size: 1.15rem;
   letter-spacing: 1px;
   padding: 3px 10px;
+  padding: 2px 10px;
   transform: skewX(-10deg);
   border: 2px solid #000;
   display: inline-flex;
@@ -841,6 +1123,7 @@ body::before {
 
 .badge-date {
   background: #333;
+  background: #282830;
   color: #fff;
 }
 
@@ -858,10 +1141,13 @@ body::before {
 
 .task-notes-snippet {
   font-family: var(--p5-font-body);
+  font-family: var(--p5-font-sub);
   font-size: 0.88rem;
   font-weight: 500;
   color: var(--p5-text-muted);
   background: #14141a;
+  color: #bbb;
+  background: #141418;
   padding: 6px 12px;
   border-left: 3px solid var(--p5-yellow);
   white-space: pre-line;
@@ -882,19 +1168,28 @@ body::before {
 
 .btn-task-action {
   background: #1c1c24;
+  background: #1c1c22;
   border: 2px solid #000;
   color: #fff;
   cursor: pointer;
   padding: 8px 10px;
   transform: skewX(var(--p5-skew));
+  padding: 6px 14px;
+  font-family: var(--p5-font);
+  font-size: 1.15rem;
+  letter-spacing: 1.5px;
+  transform: skewX(-8deg);
   box-shadow: 2px 2px 0px #000;
   transition: var(--transition);
+  transition: all 0.15s ease;
 }
 
 .btn-task-action:hover {
   background: var(--p5-yellow);
   color: #000;
   transform: skewX(var(--p5-skew)) scale(1.15);
+  transform: skewX(-8deg) scale(1.08);
+  box-shadow: 4px 4px 0px #000;
 }
 
 .btn-task-action.delete:hover {
@@ -904,6 +1199,132 @@ body::before {
 
 /* ==========================================================================
    PERSONA ALL-OUT ATTACK FINISHING MOVE OVERLAY
+   VELVET RADIO BGM PLAYER (ffaneto/persona5-website-theme)
+   ========================================================================== */
+.p5-bgm-card {
+  background: #000;
+  border: 3px solid var(--p5-yellow);
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transform: skewX(-6deg);
+  box-shadow: 4px 4px 0px #000;
+}
+
+.p5-bgm-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.p5-bgm-badge {
+  font-family: var(--p5-font);
+  font-size: 1.15rem;
+  letter-spacing: 1px;
+  color: var(--p5-yellow);
+}
+
+.p5-bgm-track {
+  font-family: var(--p5-font-sub);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 1px;
+  color: #a1a1aa;
+  background: #18181b;
+  padding: 2px 6px;
+  border: 1px solid #333;
+}
+
+.p5-bgm-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.p5-bgm-toggle {
+  flex: 1;
+  background: var(--p5-red);
+  color: #fff;
+  border: 2px solid #000;
+  padding: 8px 12px;
+  font-family: var(--p5-font);
+  font-size: 1.3rem;
+  letter-spacing: 2px;
+  cursor: pointer;
+  box-shadow: 3px 3px 0px #000;
+  transition: transform 0.15s ease, background 0.15s ease;
+  text-align: center;
+}
+
+.p5-bgm-toggle:hover {
+  background: var(--p5-yellow);
+  color: #000;
+  transform: translate(-1px, -1px);
+}
+
+.p5-bgm-toggle.playing {
+  background: var(--p5-yellow);
+  color: #000;
+  box-shadow: 0 0 12px rgba(255, 208, 0, 0.6);
+  animation: p5-pulse 1.5s infinite alternate;
+}
+
+.p5-bgm-vol-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.p5-bgm-vol-label {
+  font-family: var(--p5-font);
+  font-size: 1rem;
+  color: #888;
+}
+
+.p5-bgm-slider {
+  width: 65px;
+  accent-color: var(--p5-yellow);
+  cursor: pointer;
+}
+
+/* ==========================================================================
+   PERSONA CONTROLLER HELPER FOOTER (Inspired by ffaneto's sc-footer)
+   ========================================================================== */
+.sc-footer {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 14px;
+  background: rgba(0, 0, 0, 0.6);
+  border-left: 3px solid var(--p5-red);
+  margin-top: auto;
+}
+
+.sc-footer-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--p5-font);
+  font-size: 1.15rem;
+  letter-spacing: 1.5px;
+  color: #888;
+}
+
+.sc-footer-key {
+  background: #fff;
+  color: #000;
+  padding: 1px 6px;
+  border-radius: 2px;
+  font-size: 0.95rem;
+  font-weight: 900;
+  font-family: var(--p5-font-sub);
+}
+
+/* ==========================================================================
+   ALL-OUT ATTACK OVERLAY
    ========================================================================== */
 .p5-all-out-attack {
   position: fixed;
@@ -958,10 +1379,13 @@ body::before {
   z-index: 10;
   font-family: var(--p5-font-display);
   font-size: 4rem;
+  font-family: var(--p5-font);
+  font-size: 4.5rem;
   letter-spacing: 4px;
   color: #000;
   background: var(--p5-yellow);
   padding: 12px 48px;
+  padding: 14px 56px;
   border: 6px solid #000;
   box-shadow: 12px 12px 0px #000;
   transform: skewX(-14deg) rotate(-3deg) scale(0.4);
@@ -978,22 +1402,26 @@ body::before {
 
 /* ==========================================================================
    MODAL DIALOGS (Persona Infiltration Window)
+   MODALS
    ========================================================================== */
 dialog {
   border: 4px solid #fff;
   background: #000;
   color: #fff;
   box-shadow: 12px 12px 0px var(--primary), 18px 18px 0px #000;
+  box-shadow: 12px 12px 0px var(--p5-red), 18px 18px 0px #000;
   padding: 32px;
   width: 90%;
   max-width: 560px;
   margin: auto;
   outline: none;
   transform: skewX(-3deg) rotate(-0.5deg);
+  transform: skewX(-3deg);
 }
 
 dialog::backdrop {
   background: rgba(13, 13, 17, 0.85);
+  background: rgba(13, 13, 17, 0.88);
   backdrop-filter: blur(6px);
 }
 
@@ -1003,12 +1431,15 @@ dialog::backdrop {
   justify-content: space-between;
   margin-bottom: 22px;
   border-bottom: 3px solid var(--primary);
+  border-bottom: 3px solid var(--p5-red);
   padding-bottom: 10px;
 }
 
 .modal-title {
   font-family: var(--p5-font-display);
   font-size: 2.2rem;
+  font-family: var(--p5-font);
+  font-size: 2.4rem;
   letter-spacing: 2px;
   color: var(--p5-yellow);
   text-shadow: 3px 3px 0px #000;
@@ -1038,16 +1469,20 @@ dialog::backdrop {
 .form-group label {
   font-family: var(--p5-font-display);
   font-size: 1.15rem;
+  font-family: var(--p5-font);
+  font-size: 1.25rem;
   letter-spacing: 1.5px;
   color: var(--p5-yellow);
 }
 
 .form-group input, .form-group textarea, .form-group select {
   background: #14141a;
+  background: #141418;
   border: 2px solid #fff;
   color: #fff;
   padding: 12px 16px;
   font-family: var(--p5-font-body);
+  font-family: var(--p5-font-sub);
   font-size: 1rem;
   font-weight: 700;
   outline: none;
@@ -1075,6 +1510,8 @@ dialog::backdrop {
   padding: 10px 20px;
   font-family: var(--p5-font-display);
   font-size: 1.2rem;
+  font-family: var(--p5-font);
+  font-size: 1.3rem;
   letter-spacing: 1px;
   cursor: pointer;
   box-shadow: 3px 3px 0px #000;
@@ -1088,11 +1525,14 @@ dialog::backdrop {
 
 .btn-primary {
   background: var(--primary);
+  background: var(--p5-red);
   border: 3px solid #000;
   color: #fff;
   padding: 10px 26px;
   font-family: var(--p5-font-display);
   font-size: 1.35rem;
+  font-family: var(--p5-font);
+  font-size: 1.4rem;
   letter-spacing: 1.5px;
   cursor: pointer;
   box-shadow: 4px 4px 0px #000;
@@ -1122,6 +1562,8 @@ dialog::backdrop {
   padding: 8px 14px;
   font-family: var(--p5-font-display);
   font-size: 1.15rem;
+  font-family: var(--p5-font);
+  font-size: 1.25rem;
   letter-spacing: 1.5px;
   cursor: pointer;
   white-space: nowrap;
@@ -1148,6 +1590,7 @@ dialog::backdrop {
 .sync-code-display {
   background: #111;
   border: 3px dashed var(--primary);
+  border: 3px dashed var(--p5-red);
   padding: 18px;
   text-align: center;
   display: flex;
@@ -1160,6 +1603,8 @@ dialog::backdrop {
 .sync-code-text {
   font-family: var(--p5-font-display);
   font-size: 2.8rem;
+  font-family: var(--p5-font);
+  font-size: 3rem;
   letter-spacing: 4px;
   color: var(--p5-yellow);
   text-shadow: 3px 3px 0px #000;
@@ -1196,6 +1641,7 @@ dialog::backdrop {
   box-shadow: 6px 6px 0px #000;
   color: #fff;
   font-family: var(--p5-font-body);
+  font-family: var(--p5-font-sub);
   font-weight: 800;
   font-size: 0.95rem;
   display: flex;
@@ -1203,12 +1649,21 @@ dialog::backdrop {
   gap: 10px;
   transform: skewX(var(--p5-skew));
   animation: p5-slideUp 0.25s ease;
+  transform: skewX(-6deg);
   pointer-events: auto;
 }
 
 /* ==========================================================================
    ANIMATIONS
    ========================================================================== */
+@keyframes p5-wiggle-poly {
+  0%   { clip-path: polygon(0% 56%, 16% 0%, 76% 7%, 100% 24%, 94% 100%, 8% 88%); }
+  25%  { clip-path: polygon(0% 62%, 12% 6%, 84% 0%, 100% 34%, 88% 100%, 2% 94%); }
+  50%  { clip-path: polygon(0% 40%, 28% 10%, 72% 0%, 100% 44%, 98% 92%, 14% 100%); }
+  75%  { clip-path: polygon(0% 52%, 22% 0%, 80% 12%, 100% 28%, 90% 100%, 6% 82%); }
+  100% { clip-path: polygon(0% 56%, 16% 0%, 76% 7%, 100% 24%, 94% 100%, 8% 88%); }
+}
+
 @keyframes p5-wiggle {
   0% { transform: rotate(-1deg) skew(-4deg); }
   25% { transform: rotate(1deg) skew(-5deg) translate(-1px, 1px); }
