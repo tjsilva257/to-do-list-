@@ -1,3 +1,4 @@
+
 # 📝 SyncTask
 
 > **A modern, responsive, cross-device To-Do List application with real-time peer-to-peer sync, local Wi-Fi sync, offline-first storage, and automated desktop releases.**
