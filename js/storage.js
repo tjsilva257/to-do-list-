@@ -131,11 +131,6 @@ class StorageEngine {
   async getCategories() {
     await this.isReady;
     const defaultCategories = [
-      { id: 'cat-all', name: 'All Tasks', icon: '📝', color: '#6366f1', system: true },
-      { id: 'cat-work', name: 'Work', icon: '💼', color: '#3b82f6' },
-      { id: 'cat-personal', name: 'Personal', icon: '👤', color: '#10b981' },
-      { id: 'cat-shopping', name: 'Shopping', icon: '🛒', color: '#f59e0b' },
-      { id: 'cat-study', name: 'Study', icon: '📚', color: '#ec4899' }
       { id: 'cat-all', name: 'All Targets', icon: '🃏', color: '#e60012', system: true },
       { id: 'cat-work', name: 'Emperor (Work)', icon: '💼', color: '#e60012' },
       { id: 'cat-personal', name: 'Hierophant (Personal)', icon: '☕', color: '#ffe600' },

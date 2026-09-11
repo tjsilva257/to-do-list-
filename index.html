@@ -1,15 +1,12 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
 <html lang="en" data-theme="p5">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>SyncTask - Cross-Device To-Do List</title>
   <title>SyncTask: Phantom Edition</title>
 
   <!-- PWA & Mobile Meta -->
   <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#6366f1">
   <meta name="theme-color" content="#e60012">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -21,7 +18,6 @@
   <!-- Stylesheet -->
   <link rel="stylesheet" href="css/style.css">
 
-  <!-- External Libraries (CDN with offline fallback) -->
   <!-- External Libraries & Synthesizer -->
   <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
@@ -43,12 +39,9 @@
     <aside class="sidebar" id="sidebar" aria-label="Main Navigation">
       <div class="brand-section">
         <a href="#" class="brand-logo">
-          <img src="assets/icon.svg" alt="SyncTask Logo" width="36" height="36">
-          <span class="brand-name">SyncTask</span>
           <img src="assets/icon.svg" alt="Phantom Mask" width="40" height="40">
           <span class="brand-name">PHANTOM</span>
         </a>
-        <span class="brand-badge">v1.0</span>
         <span class="brand-badge">P5 UI</span>
       </div>
       <div class="p5-tagline">★ TAKE YOUR TIME ★</div>
@@ -56,49 +49,37 @@
       <!-- Sync Status Widget -->
       <div class="sync-status-card">
         <div class="sync-status-header">
-          <span>Cross-Device Sync</span>
           <span>METANAV LINK</span>
           <span class="sync-indicator">
             <span class="sync-dot" id="syncDot"></span>
-            <span id="syncText">Offline / Standalone</span>
             <span id="syncText">24/7 Cloud Active</span>
           </span>
         </div>
         <button class="sync-btn-quick" id="btnOpenSyncModal">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
-          </svg>
-          <span>Sync Devices</span>
           <span>⚡ SYNC METANAV</span>
         </button>
       </div>
 
       <!-- Category Navigation -->
       <nav class="nav-section">
-        <div class="nav-title">Views</div>
         <div class="nav-title">INFILTRATION TARGETS</div>
         <button class="nav-item active" data-filter="all">
-          <span class="nav-item-content"><span>📝</span> All Tasks</span>
           <span class="nav-item-content"><span>🃏</span> ALL TARGETS</span>
           <span class="nav-count" id="countAll">0</span>
         </button>
         <button class="nav-item" data-filter="today">
-          <span class="nav-item-content"><span>📅</span> Today</span>
           <span class="nav-item-content"><span>📅</span> TODAY'S MISSION</span>
           <span class="nav-count" id="countToday">0</span>
         </button>
         <button class="nav-item" data-filter="upcoming">
-          <span class="nav-item-content"><span>⏳</span> Upcoming</span>
           <span class="nav-item-content"><span>⏳</span> DEADLINE</span>
           <span class="nav-count" id="countUpcoming">0</span>
         </button>
         <button class="nav-item" data-filter="completed">
-          <span class="nav-item-content"><span>✅</span> Completed</span>
           <span class="nav-item-content"><span>💖</span> CHANGED HEARTS</span>
           <span class="nav-count" id="countCompleted">0</span>
         </button>
 
-        <div class="nav-title">Categories</div>
         <div class="nav-title">ARCANAS / CONFIDANTS</div>
         <div id="categoryListContainer">
           <!-- Dynamically populated categories -->
@@ -107,19 +88,15 @@
 
       <!-- Sidebar Footer -->
       <div class="sidebar-footer">
-        <button class="btn-icon" id="btnToggleTheme" title="Toggle Dark/Light Mode" aria-label="Toggle Theme">
-          <span id="themeIcon">🌙</span>
         <button class="btn-icon" id="btnToggleTheme" title="Switch Persona Theme (P5 Red / P3R Blue / P4G Yellow)" aria-label="Switch Theme">
           <span id="themeIcon">🎭</span>
         </button>
-        <button class="btn-icon" id="btnBackup" title="Export / Backup Tasks" aria-label="Backup Data">
         <button class="btn-icon" id="btnToggleSound" title="Toggle Sound FX" aria-label="Toggle Sound">
           <span id="soundIcon">🔊</span>
         </button>
         <button class="btn-icon" id="btnBackup" title="Export Mission Log" aria-label="Backup Data">
           <span>💾</span>
         </button>
-        <button class="btn-icon" id="btnSettings" title="App & Sync Settings" aria-label="Settings">
         <button class="btn-icon" id="btnSettings" title="Metanav Config" aria-label="Settings">
           <span>⚙️</span>
         </button>
@@ -135,47 +112,33 @@
         </button>
 
         <div class="search-box">
-          <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="11" cy="11" r="8"></circle>
             <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
           </svg>
-          <input type="text" id="searchInput" placeholder="Search tasks or tags..." autocomplete="off">
           <input type="text" id="searchInput" placeholder="SEARCH TARGETS OR CONFIDANTS..." autocomplete="off">
         </div>
 
         <div class="header-actions">
           <button class="btn-install" id="btnInstallPwa">
-            <span>📱</span> Install App
             <span>📱</span> INSTALL APP
           </button>
         </div>
       </header>
 
-      <!-- Add Task Form -->
       <!-- Add Task Form (Calling Card Dispatcher) -->
       <section class="add-task-card">
         <div class="task-input-row">
-          <input type="text" id="taskTitleInput" placeholder="What needs to be done? (Press Enter to add)" autofocus>
           <input type="text" id="taskTitleInput" placeholder="TARGET MISSION / OBJECTIVE (PRESS ENTER)..." autofocus>
         </div>
         <div class="task-meta-row">
           <div class="meta-controls">
-            <select class="select-pill" id="taskPrioritySelect" aria-label="Task Priority">
-              <option value="low">🟢 Low Priority</option>
-              <option value="medium" selected>🟡 Medium Priority</option>
-              <option value="high">🔴 High Priority</option>
             <select class="select-pill" id="taskPrioritySelect" aria-label="Alert Level">
               <option value="low">🟢 0% MINOR SHADOW</option>
               <option value="medium" selected>🟡 50% STRONG SHADOW</option>
               <option value="high">🔴 99% PALACE RULER</option>
             </select>
 
-            <select class="select-pill" id="taskCategorySelect" aria-label="Task Category">
-              <option value="Work">💼 Work</option>
-              <option value="Personal">👤 Personal</option>
-              <option value="Shopping">🛒 Shopping</option>
-              <option value="Study">📚 Study</option>
             <select class="select-pill" id="taskCategorySelect" aria-label="Arcana">
               <option value="Work">💼 Emperor (Work)</option>
               <option value="Personal">☕ Hierophant (Personal)</option>
@@ -183,11 +146,9 @@
               <option value="Study">📚 Star (Study)</option>
             </select>
 
-            <input type="date" class="date-pill" id="taskDueDateInput" aria-label="Due Date">
             <input type="date" class="date-pill" id="taskDueDateInput" aria-label="Palace Deadline">
           </div>
           <button class="btn-add-task" id="btnAddTask">
-            <span>+</span> Add Task
             <span>★</span> SEND CALLING CARD
           </button>
         </div>
@@ -195,11 +156,6 @@
 
       <!-- Filter Tabs -->
       <nav class="filter-tabs" aria-label="Filter Tasks">
-        <button class="filter-tab active" data-tab="all">All</button>
-        <button class="filter-tab" data-tab="active">Active</button>
-        <button class="filter-tab" data-tab="today">Due Today</button>
-        <button class="filter-tab" data-tab="high">High Priority</button>
-        <button class="filter-tab" data-tab="completed">Completed</button>
         <button class="filter-tab active" data-tab="all">ALL TARGETS</button>
         <button class="filter-tab" data-tab="active">ACTIVE HEARTS</button>
         <button class="filter-tab" data-tab="today">TODAY'S PALACE</button>
@@ -217,46 +173,33 @@
   <!-- Edit Task Modal (<dialog>) -->
   <dialog id="editTaskModal">
     <div class="modal-header">
-      <h3 class="modal-title">Edit Task</h3>
       <h3 class="modal-title">ALTER TARGET DATA</h3>
       <button class="modal-close-btn" id="btnCloseEditModal">&times;</button>
     </div>
     <form method="dialog" id="editTaskForm">
       <div class="modal-body">
         <div class="form-group">
-          <label for="editTaskTitle">Task Title</label>
           <label for="editTaskTitle">TARGET OBJECTIVE</label>
           <input type="text" id="editTaskTitle" required>
         </div>
 
         <div class="form-group">
-          <label for="editTaskNotes">Notes & Details</label>
-          <textarea id="editTaskNotes" rows="3" placeholder="Add extra notes or links..."></textarea>
           <label for="editTaskNotes">COGNITION NOTES</label>
           <textarea id="editTaskNotes" rows="3" placeholder="Add intelligence / mission details..."></textarea>
         </div>
 
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
           <div class="form-group">
-            <label for="editTaskPriority">Priority</label>
             <label for="editTaskPriority">ALERT LEVEL</label>
             <select id="editTaskPriority">
-              <option value="low">🟢 Low</option>
-              <option value="medium">🟡 Medium</option>
-              <option value="high">🔴 High</option>
               <option value="low">🟢 0% Minor Shadow</option>
               <option value="medium">🟡 50% Strong Shadow</option>
               <option value="high">🔴 99% Palace Ruler</option>
             </select>
           </div>
           <div class="form-group">
-            <label for="editTaskCategory">Category</label>
             <label for="editTaskCategory">ARCANA / CONFIDANT</label>
             <select id="editTaskCategory">
-              <option value="Work">💼 Work</option>
-              <option value="Personal">👤 Personal</option>
-              <option value="Shopping">🛒 Shopping</option>
-              <option value="Study">📚 Study</option>
               <option value="Work">💼 Emperor (Work)</option>
               <option value="Personal">☕ Hierophant (Personal)</option>
               <option value="Shopping">🛒 Priestess (Shopping)</option>
@@ -266,14 +209,11 @@
         </div>
 
         <div class="form-group">
-          <label for="editTaskDueDate">Due Date</label>
           <label for="editTaskDueDate">PALACE DEADLINE</label>
           <input type="date" id="editTaskDueDate">
         </div>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn-secondary" id="btnCancelEdit">Cancel</button>
-        <button type="submit" class="btn-primary" id="btnSaveEdit">Save Changes</button>
         <button type="button" class="btn-secondary" id="btnCancelEdit">CANCEL</button>
         <button type="submit" class="btn-primary" id="btnSaveEdit">UPDATE TARGET</button>
       </div>
@@ -283,15 +223,10 @@
   <!-- Cross-Device Sync & Settings Modal (<dialog>) -->
   <dialog id="syncModal">
     <div class="modal-header">
-      <h3 class="modal-title">Cross-Device Synchronization</h3>
       <h3 class="modal-title">METANAV SYNCHRONIZATION</h3>
       <button class="modal-close-btn" id="btnCloseSyncModal">&times;</button>
     </div>
     <div class="sync-tabs">
-      <button class="sync-tab-btn active" data-synctab="cloud">☁️ 24/7 Cloud Sync</button>
-      <button class="sync-tab-btn" data-synctab="p2p">Instant P2P Sync</button>
-      <button class="sync-tab-btn" data-synctab="local">Local Wi-Fi (XAMPP)</button>
-      <button class="sync-tab-btn" data-synctab="backup">Backup / Restore</button>
       <button class="sync-tab-btn active" data-synctab="cloud">☁️ 24/7 CLOUD SYNC</button>
       <button class="sync-tab-btn" data-synctab="p2p">⚡ INSTANT P2P</button>
       <button class="sync-tab-btn" data-synctab="local">🏠 LOCAL WI-FI</button>
@@ -300,44 +235,32 @@
 
     <!-- Tab 0: 24/7 Cloud Sync (GitHub Gist) -->
     <div class="sync-tab-content active" id="tabContentCloud">
-      <p style="font-size: 0.85rem; color: var(--text-muted);">
       <p style="font-size: 0.9rem; color: #a1a1aa;">
         <strong>Never worry about your computer being turned off!</strong> Your tasks sync to your private GitHub Cloud 24/7 for free.
       </p>
       <div class="form-group" style="margin-top: 6px;">
-        <label for="githubTokenInput">GitHub Personal Access Token</label>
         <label for="githubTokenInput">GITHUB ACCESS TOKEN</label>
         <input type="password" id="githubTokenInput" value="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" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx">
-        <span style="font-size: 0.75rem; color: var(--text-dim);">
-          Connected to GitHub account <code>tjsilva257</code>. (Private & Secure).
         <span style="font-size: 0.75rem; color: #71717a;">
           Connected to GitHub user <code>tjsilva257</code>. (Private & Secure).
         </span>
       </div>
       <div class="form-group">
-        <label for="githubGistIdInput">Sync Gist ID</label>
         <label for="githubGistIdInput">SYNC GIST ID</label>
         <input type="text" id="githubGistIdInput" value="85e8ded56ce90d2814cde739829d031f" placeholder="Gist ID">
       </div>
       <div style="display: flex; gap: 10px; margin-top: 8px;">
-        <button class="btn-primary" id="btnRunCloudSync">☁️ Sync Now (24/7)</button>
         <button class="btn-primary" id="btnRunCloudSync">☁️ SYNC NOW (24/7)</button>
       </div>
-      <div id="cloudSyncResult" style="font-size: 0.82rem; margin-top: 6px;"></div>
       <div id="cloudSyncResult" style="font-size: 0.85rem; margin-top: 6px;"></div>
     </div>
 
     <!-- Tab 1: P2P Instant Sync (WebRTC) -->
     <div class="sync-tab-content" id="tabContentP2p">
-      <p style="font-size: 0.85rem; color: var(--text-muted);">
-        Connect your phone, laptop, or another device directly! No server or account required.
       <p style="font-size: 0.9rem; color: #a1a1aa;">
         Direct peer-to-peer connection! Connect your phone and PC instantly by scanning the QR code.
       </p>
       <div class="sync-code-display">
-        <span style="font-size: 0.8rem; color: var(--text-dim);">Your Device Sync Code</span>
-        <div class="sync-code-text" id="mySyncCodeDisplay">Generating...</div>
-        <button class="btn-secondary" style="font-size: 0.75rem; padding: 4px 10px;" id="btnCopySyncCode">📋 Copy Code</button>
         <span style="font-size: 0.85rem; color: #a1a1aa;">YOUR NAVIGATOR CODE</span>
         <div class="sync-code-text" id="mySyncCodeDisplay">GENERATING...</div>
         <button class="btn-secondary" style="font-size: 0.8rem; padding: 4px 12px;" id="btnCopySyncCode">📋 COPY CODE</button>
@@ -348,57 +271,40 @@
       </div>
 
       <div class="form-group" style="margin-top: 8px;">
-        <label for="remoteSyncCodeInput">Connect to Another Device</label>
         <label for="remoteSyncCodeInput">CONNECT TO ANOTHER PHANTOM</label>
         <div style="display: flex; gap: 8px;">
-          <input type="text" id="remoteSyncCodeInput" placeholder="Enter 6-char code (e.g. st-a1b2)" style="flex: 1;">
-          <button class="btn-primary" id="btnConnectP2P">Connect & Sync</button>
           <input type="text" id="remoteSyncCodeInput" placeholder="Enter code (e.g. st-a1b2)" style="flex: 1;">
           <button class="btn-primary" id="btnConnectP2P">CONNECT</button>
         </div>
       </div>
 
-      <div id="connectedPeersList" style="font-size: 0.8rem; color: var(--success); font-weight: 500;"></div>
       <div id="connectedPeersList" style="font-size: 0.85rem; color: var(--p5-yellow); font-weight: 700;"></div>
     </div>
 
     <!-- Tab 2: Local Wi-Fi / REST Server Sync (XAMPP) -->
     <div class="sync-tab-content" id="tabContentLocal">
-      <p style="font-size: 0.85rem; color: var(--text-muted);">
-        Synchronize across all devices connected to your home/office Wi-Fi via your XAMPP or custom server backend.
       <p style="font-size: 0.9rem; color: #a1a1aa;">
         Synchronize across all devices connected to your home Wi-Fi via your local XAMPP backend.
       </p>
       <div class="form-group">
-        <label for="serverApiUrlInput">Sync API Endpoint URL</label>
         <label for="serverApiUrlInput">SYNC API ENDPOINT URL</label>
         <input type="url" id="serverApiUrlInput" placeholder="http://192.168.1.X/to-do-list-/api/sync.php">
-        <span style="font-size: 0.75rem; color: var(--text-dim);">
-          Tip: Replace <code>localhost</code> with your computer's local IP address so phones can connect.
-        </span>
       </div>
       <div style="display: flex; gap: 10px; margin-top: 8px;">
-        <button class="btn-secondary" id="btnTestServerSync">Test Connection</button>
-        <button class="btn-primary" id="btnRunServerSync">Sync Now</button>
         <button class="btn-secondary" id="btnTestServerSync">TEST LINK</button>
         <button class="btn-primary" id="btnRunServerSync">SYNC NOW</button>
       </div>
-      <div id="serverSyncResult" style="font-size: 0.82rem; margin-top: 6px;"></div>
       <div id="serverSyncResult" style="font-size: 0.85rem; margin-top: 6px;"></div>
     </div>
 
     <!-- Tab 3: Backup & Restore -->
     <div class="sync-tab-content" id="tabContentBackup">
-      <p style="font-size: 0.85rem; color: var(--text-muted);">
-        Export your tasks to a JSON file to transfer between devices via USB, email, or cloud storage.
       <p style="font-size: 0.9rem; color: #a1a1aa;">
         Export or restore your mission log as a JSON file.
       </p>
       <div style="display: flex; gap: 12px; margin-top: 10px;">
-        <button class="btn-primary" id="btnExportJson">💾 Download Backup (.json)</button>
         <button class="btn-primary" id="btnExportJson">💾 DOWNLOAD LOG (.JSON)</button>
         <label class="btn-secondary" style="cursor: pointer; display: inline-flex; align-items: center;">
-          📥 Restore Backup
           📥 RESTORE LOG
           <input type="file" id="importJsonFileInput" accept=".json" style="display: none;">
         </label>
@@ -406,7 +312,6 @@
     </div>
 
     <div class="modal-footer">
-      <button class="btn-secondary" id="btnCloseSyncModalFooter">Done</button>
       <button class="btn-secondary" id="btnCloseSyncModalFooter">CLOSE</button>
     </div>
   </dialog>
@@ -424,7 +329,6 @@
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('./sw.js').catch((err) => {
-          console.log('Service Worker registration skipped:', err);
           console.log('Service Worker skipped:', err);
         });
       });
@@ -432,4 +336,3 @@
   </script>
 </body>
 </html>
-

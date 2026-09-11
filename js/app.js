@@ -92,8 +92,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     }, 3500);
   }
 
-  // --- Theme Management ---
-  const savedTheme = await window.storageEngine.getSetting('theme', 'dark');
   // --- Persona Theme & Sound Management ---
   const themes = ['p5', 'p3r', 'p4g'];
   const themeIcons = { p5: '🎭 P5', p3r: '🌙 P3R', p4g: '📺 P4G' };
@@ -101,18 +99,14 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (!themes.includes(savedTheme)) savedTheme = 'p5';
 
   document.documentElement.setAttribute('data-theme', savedTheme);
-  themeIcon.textContent = savedTheme === 'dark' ? '🌙' : '☀️';
   themeIcon.textContent = themeIcons[savedTheme] || '🎭 P5';
 
   btnToggleTheme.addEventListener('click', async () => {
-    const currentTheme = document.documentElement.getAttribute('data-theme');
-    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
     window.p5Audio?.playSelect();
     const currentTheme = document.documentElement.getAttribute('data-theme') || 'p5';
     const nextIdx = (themes.indexOf(currentTheme) + 1) % themes.length;
     const newTheme = themes[nextIdx];
     document.documentElement.setAttribute('data-theme', newTheme);
-    themeIcon.textContent = newTheme === 'dark' ? '🌙' : '☀️';
     themeIcon.textContent = themeIcons[newTheme];
     await window.storageEngine.setSetting('theme', newTheme);
     showToast(`Persona Theme: ${themeIcons[newTheme]}`, 'info');
@@ -256,7 +250,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         dateBadgeText = `⚠️ Overdue (${task.dueDate})`;
       }
 
-      const priorityLabel = task.priority ? task.priority.toUpperCase() : 'MEDIUM';
       let priorityLabel = '50% STRONG SHADOW';
       if (task.priority === 'high') priorityLabel = '99% PALACE RULER';
       if (task.priority === 'low') priorityLabel = '0% MINOR SHADOW';
@@ -320,7 +313,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     taskDueDateInput.value = '';
 
     await renderTasks();
-    showToast(`Task "${title}" added!`, 'success');
     window.p5Audio?.playCardSent();
     showToast(`Calling Card Sent: "${title}"!`, 'success');
 
@@ -356,12 +348,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         task.updatedAt = Date.now();
         await window.storageEngine.saveTask(task);
 
-        if (task.completed && typeof confetti === 'function') {
-          confetti({
-            particleCount: 50,
-            spread: 60,
-            origin: { y: 0.8 }
-          });
         if (task.completed) {
           // Trigger Persona All-Out Attack Full-Screen Comic Animation
           const aoa = document.getElementById('p5AoaOverlay');
