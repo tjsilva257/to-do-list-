@@ -136,6 +136,11 @@ class StorageEngine {
       { id: 'cat-personal', name: 'Personal', icon: '👤', color: '#10b981' },
       { id: 'cat-shopping', name: 'Shopping', icon: '🛒', color: '#f59e0b' },
       { id: 'cat-study', name: 'Study', icon: '📚', color: '#ec4899' }
+      { id: 'cat-all', name: 'All Targets', icon: '🃏', color: '#e60012', system: true },
+      { id: 'cat-work', name: 'Emperor (Work)', icon: '💼', color: '#e60012' },
+      { id: 'cat-personal', name: 'Hierophant (Personal)', icon: '☕', color: '#ffe600' },
+      { id: 'cat-shopping', name: 'Priestess (Shopping)', icon: '🛒', color: '#00f0ff' },
+      { id: 'cat-study', name: 'Star (Study)', icon: '📚', color: '#f59e0b' }
     ];
 
     if (this.db) {

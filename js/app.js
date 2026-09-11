@@ -94,16 +94,47 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // --- Theme Management ---
   const savedTheme = await window.storageEngine.getSetting('theme', 'dark');
+  // --- Persona Theme & Sound Management ---
+  const themes = ['p5', 'p3r', 'p4g'];
+  const themeIcons = { p5: '🎭 P5', p3r: '🌙 P3R', p4g: '📺 P4G' };
+  let savedTheme = await window.storageEngine.getSetting('theme', 'p5');
+  if (!themes.includes(savedTheme)) savedTheme = 'p5';
+
   document.documentElement.setAttribute('data-theme', savedTheme);
   themeIcon.textContent = savedTheme === 'dark' ? '🌙' : '☀️';
+  themeIcon.textContent = themeIcons[savedTheme] || '🎭 P5';
 
   btnToggleTheme.addEventListener('click', async () => {
     const currentTheme = document.documentElement.getAttribute('data-theme');
     const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+    window.p5Audio?.playSelect();
+    const currentTheme = document.documentElement.getAttribute('data-theme') || 'p5';
+    const nextIdx = (themes.indexOf(currentTheme) + 1) % themes.length;
+    const newTheme = themes[nextIdx];
     document.documentElement.setAttribute('data-theme', newTheme);
     themeIcon.textContent = newTheme === 'dark' ? '🌙' : '☀️';
+    themeIcon.textContent = themeIcons[newTheme];
     await window.storageEngine.setSetting('theme', newTheme);
+    showToast(`Persona Theme: ${themeIcons[newTheme]}`, 'info');
   });
+
+  // Sound FX Toggle
+  const btnToggleSound = document.getElementById('btnToggleSound');
+  const soundIcon = document.getElementById('soundIcon');
+  const soundEnabled = await window.storageEngine.getSetting('soundEnabled', true);
+  if (window.p5Audio) window.p5Audio.soundEnabled = soundEnabled;
+  if (soundIcon) soundIcon.textContent = soundEnabled ? '🔊' : '🔇';
+
+  if (btnToggleSound) {
+    btnToggleSound.addEventListener('click', async () => {
+      const isEnabled = !window.p5Audio.soundEnabled;
+      window.p5Audio.soundEnabled = isEnabled;
+      soundIcon.textContent = isEnabled ? '🔊' : '🔇';
+      await window.storageEngine.setSetting('soundEnabled', isEnabled);
+      if (isEnabled) window.p5Audio.playSelect();
+      showToast(isEnabled ? 'Sound Effects Enabled!' : 'Sound Effects Muted', 'info');
+    });
+  }
 
   // --- Mobile Sidebar Toggle ---
   if (btnToggleSidebar) {
@@ -226,6 +257,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
 
       const priorityLabel = task.priority ? task.priority.toUpperCase() : 'MEDIUM';
+      let priorityLabel = '50% STRONG SHADOW';
+      if (task.priority === 'high') priorityLabel = '99% PALACE RULER';
+      if (task.priority === 'low') priorityLabel = '0% MINOR SHADOW';
 
       return `
         <article class="task-card ${task.completed ? 'completed' : ''}" data-id="${task.id}">
@@ -287,6 +321,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     await renderTasks();
     showToast(`Task "${title}" added!`, 'success');
+    window.p5Audio?.playCardSent();
+    showToast(`Calling Card Sent: "${title}"!`, 'success');
 
     // Broadcast change to connected peers
     window.syncEngine.broadcastLiveChange(saved);
@@ -326,6 +362,28 @@ document.addEventListener('DOMContentLoaded', async () => {
             spread: 60,
             origin: { y: 0.8 }
           });
+        if (task.completed) {
+          // Trigger Persona All-Out Attack Full-Screen Comic Animation
+          const aoa = document.getElementById('p5AoaOverlay');
+          if (aoa) {
+            aoa.classList.add('active');
+            window.p5Audio?.playSlashAttack();
+            setTimeout(() => {
+              aoa.classList.remove('active');
+            }, 850);
+          }
+
+          if (typeof confetti === 'function') {
+            confetti({
+              particleCount: 75,
+              spread: 85,
+              origin: { y: 0.6 },
+              colors: ['#e60012', '#ffe600', '#ffffff', '#000000']
+            });
+          }
+          showToast(`Target Eliminated! Heart Changed!`, 'success');
+        } else {
+          window.p5Audio?.playSelect();
         }
 
         await renderTasks();

@@ -11,14 +11,27 @@
     </linearGradient>
     <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
       <feDropShadow dx="0" dy="8" stdDeviation="16" flood-color="#000000" flood-opacity="0.25" />
+    <!-- Comic halftone dot pattern -->
+    <pattern id="halftone" x="0" y="0" width="16" height="16" patternUnits="userSpaceOnUse">
+      <circle cx="8" cy="8" r="3" fill="rgba(0,0,0,0.18)" />
+    </pattern>
+    <!-- Dramatic shadow filter -->
+    <filter id="p5Shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="6" dy="12" stdDeviation="0" flood-color="#000000" flood-opacity="1" />
     </filter>
   </defs>
 
   <!-- Background rounded rectangle -->
   <rect width="512" height="512" rx="112" fill="url(#bgGrad)" />
+  <!-- Background Base: Acid Crimson Red -->
+  <rect width="512" height="512" rx="64" fill="#e60012" />
+  <rect width="512" height="512" rx="64" fill="url(#halftone)" />
 
   <!-- Subtle inner border -->
   <rect x="8" y="8" width="496" height="496" rx="104" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="4" />
+  <!-- Diagonal Persona Black Slashes -->
+  <polygon points="0,80 512,0 512,60 0,140" fill="#0a0a0c" opacity="0.35" />
+  <polygon points="0,420 512,340 512,400 0,480" fill="#0a0a0c" opacity="0.4" />
 
   <!-- Sync circular arrows -->
   <g fill="none" stroke="rgba(255, 255, 255, 0.4)" stroke-width="24" stroke-linecap="round">
@@ -27,15 +40,44 @@
     <!-- Bottom-left arc -->
     <path d="M 182 372 A 150 150 0 0 1 112 256 A 150 150 0 0 1 202 132" />
   </g>
+  <!-- Stylized Star in Top Left -->
+  <polygon points="90,45 105,75 140,80 115,105 120,140 90,120 60,140 65,105 40,80 75,75" fill="#ffe600" filter="url(#p5Shadow)" />
 
   <!-- Arrow tips -->
   <polygon points="340,115 365,160 315,160" fill="rgba(255, 255, 255, 0.6)" />
   <polygon points="172,397 147,352 197,352" fill="rgba(255, 255, 255, 0.6)" />
+  <!-- Joker Mask Group (Centered & Slanted) -->
+  <g transform="translate(256, 245) rotate(-6)" filter="url(#p5Shadow)">
+    <!-- Black Mask Shadow Backdrop -->
+    <path d="M -180,-70 C -140,-130 -40,-110 0,-70 C 40,-110 140,-130 180,-70 C 210,-20 180,60 110,85 C 40,110 20,145 0,150 C -20,145 -40,110 -110,85 C -180,60 -210,-20 -180,-70 Z" fill="#0a0a0c" />
 
   <!-- Central Checkmark Badge -->
   <circle cx="256" cy="256" r="100" fill="#ffffff" filter="url(#shadow)" />
+    <!-- Pure White Mask Silhouette -->
+    <path d="M -170,-60 C -130,-115 -35,-95 0,-60 C 35,-95 130,-115 170,-60 C 195,-15 170,50 100,75 C 35,98 15,130 0,135 C -15,130 -35,98 -100,75 C -170,50 -195,-15 -170,-60 Z" fill="#ffffff" />
 
   <!-- Dynamic Checkmark -->
   <path d="M 210 256 L 242 288 L 305 220" fill="none" stroke="url(#checkGrad)" stroke-width="24" stroke-linecap="round" stroke-linejoin="round" />
+    <!-- Eye Cutouts (Deep Black Angles) -->
+    <!-- Left Eye -->
+    <polygon points="-115,-30 -45,-45 -35,-15 -90,5" fill="#0a0a0c" />
+    <polygon points="-110,-25 -50,-38 -42,-18 -90,-2" fill="#e60012" opacity="0.85" />
+
+    <!-- Right Eye -->
+    <polygon points="115,-30 45,-45 35,-15 90,5" fill="#0a0a0c" />
+    <polygon points="110,-25 50,-38 42,-18 90,-2" fill="#e60012" opacity="0.85" />
+
+    <!-- Sharp Center Bridge -->
+    <polygon points="-12,-40 12,-40 0,25" fill="#0a0a0c" />
+  </g>
+
+  <!-- Stylized "TAKE YOUR TIME" Bottom Banner Ribbon -->
+  <g transform="translate(256, 445) rotate(-3)">
+    <polygon points="-190,-26 190,-32 180,26 -200,32" fill="#0a0a0c" />
+    <polygon points="-186,-22 186,-28 178,22 -194,28" fill="#ffe600" />
+    <text x="0" y="7" font-family="'Impact', 'Arial Black', sans-serif" font-size="28" font-weight="900" font-style="italic" fill="#0a0a0c" text-anchor="middle" letter-spacing="3">
+      TAKE YOUR TIME
+    </text>
+  </g>
 </svg>
 
