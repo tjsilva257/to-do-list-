@@ -130,27 +130,30 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
-  // --- Persona 5 Velvet Radio BGM Controls ---
+  // --- Persona 5 Velvet Radio BGM Controls (ffaneto inspired) ---
   const btnBgmToggle = document.getElementById('btnBgmToggle');
   const bgmVolumeSlider = document.getElementById('bgmVolumeSlider');
+  const bgmVolumeDisplay = document.getElementById('bgmVolumeDisplay');
 
   if (btnBgmToggle && window.p5Audio) {
     btnBgmToggle.addEventListener('click', () => {
       const isPlaying = window.p5Audio.toggleBgm();
-      btnBgmToggle.textContent = isPlaying ? '⏸ PAUSE BGM' : '▶ PLAY BGM';
-      btnBgmToggle.classList.toggle('playing', isPlaying);
+      btnBgmToggle.textContent = isPlaying ? 'BGM ON' : 'BGM OFF';
+      btnBgmToggle.classList.toggle('on', isPlaying);
     });
   }
 
   if (bgmVolumeSlider && window.p5Audio) {
     bgmVolumeSlider.addEventListener('input', (e) => {
-      window.p5Audio.setBgmVolume(parseFloat(e.target.value));
+      const vol = parseFloat(e.target.value);
+      window.p5Audio.setBgmVolume(vol);
+      if (bgmVolumeDisplay) bgmVolumeDisplay.textContent = Math.round(vol * 100);
     });
   }
 
-  // Authentic Hover Sound FX on all interactive Persona items
+  // Universal Persona 5 Hover Sound on all buttons and interactive controls
   document.addEventListener('mouseover', (e) => {
-    const target = e.target.closest('.nav-item, .filter-tab, .btn-add-task, .btn-icon, .sync-btn-quick, .btn-task-action, .p5-bgm-toggle');
+    const target = e.target.closest('button, .nav-item, .filter-tab, .select-pill, .date-pill, .sync-tab-btn');
     if (target && !target.dataset.p5HoverBound) {
       target.dataset.p5HoverBound = '1';
       target.addEventListener('mouseenter', () => {
@@ -160,7 +163,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 
   // --- Mobile Sidebar Toggle ---
-  if (btnToggleSidebar) {
+  if (btnToggleSidebar && sidebar) {
     btnToggleSidebar.addEventListener('click', () => {
       window.p5Audio?.playSelect();
       sidebar.classList.toggle('open');
@@ -278,9 +281,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (filtered.length === 0) {
       tasksContainer.innerHTML = `
         <div class="empty-state">
-          <div class="empty-state-icon">✨</div>
-          <h3>No tasks found</h3>
-          <p>You're all caught up! Add a new task above or adjust your filters.</p>
           <div class="empty-state-icon" style="font-family: var(--p5-font); font-size: 3.5rem; color: var(--p5-yellow);">★</div>
           <h3>NO TARGETS IN COGNITION</h3>
           <p>The Metaverse is clear. Send a Calling Card above to claim a target heart.</p>
@@ -297,26 +297,20 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       if (isDueToday) {
         dateBadgeClass = 'today';
-        dateBadgeText = '📅 Today';
         dateBadgeText = 'DEADLINE: TODAY';
       } else if (isOverdue) {
         dateBadgeClass = 'overdue';
-        dateBadgeText = `⚠️ Overdue (${task.dueDate})`;
         dateBadgeText = `OVERDUE (${task.dueDate})`;
       } else if (task.dueDate) {
         dateBadgeText = `DEADLINE: ${task.dueDate}`;
       }
 
-      let priorityLabel = '50% STRONG SHADOW';
-      if (task.priority === 'high') priorityLabel = '99% PALACE RULER';
-      if (task.priority === 'low') priorityLabel = '0% MINOR SHADOW';
       let priorityLabel = 'ALERT: 50% SHADOW';
       if (task.priority === 'high') priorityLabel = 'ALERT: 99% RULER';
       if (task.priority === 'low') priorityLabel = 'ALERT: 0% MINOR';
 
       return `
         <article class="task-card ${task.completed ? 'completed' : ''}" data-id="${task.id}">
-          <label class="task-checkbox-container" title="${task.completed ? 'Mark incomplete' : 'Mark complete'}">
           <label class="task-checkbox-container" title="${task.completed ? 'Mark incomplete' : 'Change Heart (Complete)'}">
             <input type="checkbox" class="task-checkbox-input" ${task.completed ? 'checked' : ''} data-action="toggle">
           </label>
@@ -325,8 +319,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             <div class="task-header-row">
               <span class="task-title">${escapeHtml(task.title)}</span>
               <div class="task-actions">
-                <button class="btn-task-action" data-action="edit" title="Edit task">✏️</button>
-                <button class="btn-task-action delete" data-action="delete" title="Delete task">🗑️</button>
                 <button class="btn-task-action" data-action="edit" title="Edit Target">EDIT</button>
                 <button class="btn-task-action delete" data-action="delete" title="Delete Target">DELETE</button>
               </div>
@@ -334,7 +326,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             <div class="task-badges">
               <span class="badge badge-priority-${task.priority || 'medium'}">${priorityLabel}</span>
-              ${task.category ? `<span class="badge badge-category">📁 ${escapeHtml(task.category)}</span>` : ''}
               ${task.category ? `<span class="badge badge-category">[${escapeHtml(task.category).toUpperCase()}]</span>` : ''}
               ${task.dueDate ? `<span class="badge badge-date ${dateBadgeClass}">${dateBadgeText}</span>` : ''}
             </div>
@@ -511,26 +502,20 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   });
 
-  navItems.forEach(item => {
-    item.addEventListener('click', () => {
-      navItems.forEach(i => i.classList.remove('active'));
-  const navSection = document.querySelector('.nav-section');
-  if (navSection) {
-    navSection.addEventListener('click', (e) => {
+  const navWing = document.getElementById('sidebar');
+  if (navWing) {
+    navWing.addEventListener('click', (e) => {
       const item = e.target.closest('.nav-item');
       if (!item) return;
       window.p5Audio?.playSelect();
       document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
       item.classList.add('active');
-      currentFilter = item.getAttribute('data-filter');
       currentFilter = item.getAttribute('data-filter') || 'all';
       renderTasks();
-      if (window.innerWidth <= 820) {
-      if (window.innerWidth <= 860) {
+      if (window.innerWidth <= 960 && sidebar) {
         sidebar.classList.remove('open');
       }
     });
-  });
   }
 
   // --- Sync Modal & Tabs ---
