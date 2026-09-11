@@ -194,17 +194,14 @@ class StorageEngine {
         const tx = this.db.transaction('settings', 'readonly');
         const store = tx.objectStore('settings');
         const req = store.get(key);
-        req.onsuccess = () => resolve(req.result ? req.result.value : defaultValue);
         req.onsuccess = () => resolve(req.result ? req.result.value : effectiveDefault);
         req.onerror = () => {
           const val = localStorage.getItem('synctask_set_' + key);
-          resolve(val !== null ? JSON.parse(val) : defaultValue);
           resolve(val !== null ? JSON.parse(val) : effectiveDefault);
         };
       });
     }
     const val = localStorage.getItem('synctask_set_' + key);
-    return val !== null ? JSON.parse(val) : defaultValue;
     return val !== null ? JSON.parse(val) : effectiveDefault;
   }
 
