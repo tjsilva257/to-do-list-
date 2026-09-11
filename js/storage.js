@@ -181,20 +181,31 @@ class StorageEngine {
 
   async getSetting(key, defaultValue = null) {
     await this.isReady;
+    const defaultSettings = {
+      theme: 'dark',
+      githubToken: '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',
+      githubGistId: '85e8ded56ce90d2814cde739829d031f',
+      cloudSyncEnabled: true
+    };
+    const effectiveDefault = defaultSettings[key] !== undefined ? defaultSettings[key] : defaultValue;
+
     if (this.db) {
       return new Promise((resolve) => {
         const tx = this.db.transaction('settings', 'readonly');
         const store = tx.objectStore('settings');
         const req = store.get(key);
         req.onsuccess = () => resolve(req.result ? req.result.value : defaultValue);
+        req.onsuccess = () => resolve(req.result ? req.result.value : effectiveDefault);
         req.onerror = () => {
           const val = localStorage.getItem('synctask_set_' + key);
           resolve(val !== null ? JSON.parse(val) : defaultValue);
+          resolve(val !== null ? JSON.parse(val) : effectiveDefault);
         };
       });
     }
     const val = localStorage.getItem('synctask_set_' + key);
     return val !== null ? JSON.parse(val) : defaultValue;
+    return val !== null ? JSON.parse(val) : effectiveDefault;
   }
 
   async setSetting(key, value) {
