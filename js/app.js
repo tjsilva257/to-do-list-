@@ -512,7 +512,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       item.classList.add('active');
       currentFilter = item.getAttribute('data-filter') || 'all';
       renderTasks();
-      if (window.innerWidth <= 960 && sidebar) {
+      if (window.innerWidth <= 960) {
         sidebar.classList.remove('open');
       }
     });
