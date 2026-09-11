@@ -42,6 +42,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   const btnBackup = document.getElementById('btnBackup');
   const btnSettings = document.getElementById('btnSettings');
 
+  // 24/7 Cloud Sync Elements
+  const githubTokenInput = document.getElementById('githubTokenInput');
+  const githubGistIdInput = document.getElementById('githubGistIdInput');
+  const btnRunCloudSync = document.getElementById('btnRunCloudSync');
+  const cloudSyncResult = document.getElementById('cloudSyncResult');
+
   // Edit Modal Elements
   const editTaskModal = document.getElementById('editTaskModal');
   const btnCloseEditModal = document.getElementById('btnCloseEditModal');
@@ -409,10 +415,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 
   // --- Sync Modal & Tabs ---
-  function openSyncModal() {
+  async function openSyncModal() {
     syncModal.showModal();
     initP2PDisplay();
     serverApiUrlInput.value = window.syncEngine.apiUrl;
+    githubTokenInput.value = await window.storageEngine.getSetting('githubToken', '');
+    githubGistIdInput.value = await window.storageEngine.getSetting('githubGistId', '');
   }
 
   btnOpenSyncModal.addEventListener('click', openSyncModal);
@@ -430,10 +438,40 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       btn.classList.add('active');
       const targetTab = btn.getAttribute('data-synctab');
+      if (targetTab === 'cloud') document.getElementById('tabContentCloud').classList.add('active');
       if (targetTab === 'p2p') document.getElementById('tabContentP2p').classList.add('active');
       if (targetTab === 'local') document.getElementById('tabContentLocal').classList.add('active');
       if (targetTab === 'backup') document.getElementById('tabContentBackup').classList.add('active');
     });
+  });
+
+  // --- 24/7 GitHub Gist Cloud Sync Button ---
+  btnRunCloudSync.addEventListener('click', async () => {
+    const token = githubTokenInput.value.trim();
+    const gistId = githubGistIdInput.value.trim();
+    if (!token) {
+      showToast('Please enter your GitHub Personal Access Token', 'error');
+      return;
+    }
+
+    btnRunCloudSync.disabled = true;
+    btnRunCloudSync.textContent = 'Syncing...';
+    cloudSyncResult.textContent = 'Connecting to GitHub Cloud...';
+
+    const result = await window.syncEngine.syncWithGitHub(token, gistId || null);
+    if (result.success) {
+      githubGistIdInput.value = result.gistId;
+      cloudSyncResult.innerHTML = `<span style="color: var(--success)">✅ 24/7 Cloud Sync Active! (Gist ID: <code>${result.gistId}</code>)</span>`;
+      syncDot.className = 'sync-dot online';
+      syncText.textContent = 'Cloud 24/7 Active';
+      showToast('24/7 Cloud Sync activated!', 'success');
+      await renderTasks();
+    } else {
+      cloudSyncResult.innerHTML = `<span style="color: var(--danger)">❌ Sync failed: ${result.error}</span>`;
+      showToast(result.error, 'error');
+    }
+    btnRunCloudSync.disabled = false;
+    btnRunCloudSync.textContent = '☁️ Sync Now (24/7)';
   });
 
   // --- P2P WebRTC Handling ---
@@ -605,5 +643,19 @@ document.addEventListener('DOMContentLoaded', async () => {
   // --- Initial Launch ---
   await renderTasks();
   initP2PDisplay(); // auto-start P2P listening in background
+
+  // Auto-sync with 24/7 Cloud (GitHub Gist) if configured
+  const cloudEnabled = await window.storageEngine.getSetting('cloudSyncEnabled', false);
+  if (cloudEnabled) {
+    syncDot.className = 'sync-dot syncing';
+    syncText.textContent = 'Cloud Syncing...';
+    window.syncEngine.syncWithGitHub().then((res) => {
+      if (res && res.success) {
+        syncDot.className = 'sync-dot online';
+        syncText.textContent = 'Cloud 24/7 Active';
+        renderTasks();
+      }
+    }).catch(() => {});
+  }
 });
 

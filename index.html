@@ -215,13 +215,36 @@
       <button class="modal-close-btn" id="btnCloseSyncModal">&times;</button>
     </div>
     <div class="sync-tabs">
-      <button class="sync-tab-btn active" data-synctab="p2p">Instant P2P Sync</button>
+      <button class="sync-tab-btn active" data-synctab="cloud">☁️ 24/7 Cloud Sync</button>
+      <button class="sync-tab-btn" data-synctab="p2p">Instant P2P Sync</button>
       <button class="sync-tab-btn" data-synctab="local">Local Wi-Fi (XAMPP)</button>
       <button class="sync-tab-btn" data-synctab="backup">Backup / Restore</button>
     </div>
 
+    <!-- Tab 0: 24/7 Cloud Sync (GitHub Gist) -->
+    <div class="sync-tab-content active" id="tabContentCloud">
+      <p style="font-size: 0.85rem; color: var(--text-muted);">
+        <strong>Never worry about your computer being turned off!</strong> Your tasks sync to your private GitHub Cloud 24/7 for free.
+      </p>
+      <div class="form-group" style="margin-top: 6px;">
+        <label for="githubTokenInput">GitHub Personal Access Token</label>
+        <input type="password" id="githubTokenInput" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx">
+        <span style="font-size: 0.75rem; color: var(--text-dim);">
+          Don't have a token? <a href="https://github.com/settings/tokens/new?scopes=gist&description=SyncTask%20Cloud%20Storage" target="_blank" rel="noopener" style="color: var(--primary);">Click here to generate a free token</a> (check only <code>gist</code>).
+        </span>
+      </div>
+      <div class="form-group">
+        <label for="githubGistIdInput">Sync Gist ID (Auto-generated on first sync)</label>
+        <input type="text" id="githubGistIdInput" placeholder="Leave empty to create new, or enter ID from other device">
+      </div>
+      <div style="display: flex; gap: 10px; margin-top: 8px;">
+        <button class="btn-primary" id="btnRunCloudSync">☁️ Sync Now (24/7)</button>
+      </div>
+      <div id="cloudSyncResult" style="font-size: 0.82rem; margin-top: 6px;"></div>
+    </div>
+
     <!-- Tab 1: P2P Instant Sync (WebRTC) -->
-    <div class="sync-tab-content active" id="tabContentP2p">
+    <div class="sync-tab-content" id="tabContentP2p">
       <p style="font-size: 0.85rem; color: var(--text-muted);">
         Connect your phone, laptop, or another device directly! No server or account required.
       </p>

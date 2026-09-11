@@ -196,13 +196,23 @@ class SyncEngine {
   }
 
   broadcastLiveChange(task) {
-    if (this.activeConnections.size === 0) return;
-    const msg = { type: 'LIVE_TASK_UPDATE', task, timestamp: Date.now() };
-    for (const conn of this.activeConnections.values()) {
-      if (conn.open) {
-        try { conn.send(msg); } catch (e) { console.warn('Failed to broadcast to peer:', e); }
+    if (this.activeConnections.size > 0) {
+      const msg = { type: 'LIVE_TASK_UPDATE', task, timestamp: Date.now() };
+      for (const conn of this.activeConnections.values()) {
+        if (conn.open) {
+          try { conn.send(msg); } catch (e) { console.warn('Failed to broadcast to peer:', e); }
+        }
       }
     }
+
+    // Auto-sync to GitHub Cloud (24/7) with debounce if enabled
+    if (this.cloudSyncDebounceTimer) clearTimeout(this.cloudSyncDebounceTimer);
+    this.cloudSyncDebounceTimer = setTimeout(async () => {
+      const enabled = await this.storage.getSetting('cloudSyncEnabled', false);
+      if (enabled) {
+        this.syncWithGitHub().catch(() => {});
+      }
+    }, 2500);
   }
 
   // --- Local / REST Server Sync ---
@@ -241,6 +251,126 @@ class SyncEngine {
       return { success: true, updated: 0 };
     } catch (err) {
       console.warn('Server sync error:', err.message);
+      this._notify('sync_error', { message: err.message });
+      return { success: false, error: err.message };
+    }
+  }
+
+  // --- 24/7 Cloud Sync via GitHub Gist (No computer/server needed!) ---
+
+  async syncWithGitHub(token = null, gistId = null) {
+    const ghToken = (token || await this.storage.getSetting('githubToken', '')).trim();
+    let ghGistId = (gistId !== null ? gistId : await this.storage.getSetting('githubGistId', '')).trim();
+
+    if (!ghToken) {
+      return { success: false, error: 'No GitHub Personal Access Token provided' };
+    }
+
+    try {
+      this._notify('sync_start', { target: 'github' });
+      const localTasks = await this.storage.getAllTasks(true);
+      const categories = await this.storage.getCategories();
+
+      // If we have an existing Gist ID, fetch and merge
+      if (ghGistId) {
+        const getRes = await fetch(`https://api.github.com/gists/${ghGistId}`, {
+          headers: {
+            'Authorization': `Bearer ${ghToken}`,
+            'Accept': 'application/vnd.github+json'
+          }
+        });
+
+        if (getRes.ok) {
+          const gistData = await getRes.json();
+          const file = gistData.files && gistData.files['synctask-data.json'];
+          if (file && file.content) {
+            try {
+              const remoteParsed = JSON.parse(file.content);
+              if (remoteParsed.tasks && Array.isArray(remoteParsed.tasks)) {
+                await this.storage.mergeTasks(remoteParsed.tasks);
+              }
+              if (remoteParsed.categories && Array.isArray(remoteParsed.categories)) {
+                await this.storage.saveCategories(remoteParsed.categories);
+              }
+            } catch (e) {
+              console.warn('Failed to parse remote gist content:', e);
+            }
+          }
+        } else if (getRes.status === 404) {
+          ghGistId = '';
+        } else {
+          const errData = await getRes.json().catch(() => ({}));
+          throw new Error(errData.message || `GitHub error: HTTP ${getRes.status}`);
+        }
+      }
+
+      // Now prepare current merged data to push to GitHub Gist
+      const allCurrentTasks = await this.storage.getAllTasks(true);
+      const payloadString = JSON.stringify({
+        version: 1,
+        updatedAt: Date.now(),
+        tasks: allCurrentTasks,
+        categories: categories
+      }, null, 2);
+
+      if (!ghGistId) {
+        // Create new private Gist
+        const createRes = await fetch('https://api.github.com/gists', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${ghToken}`,
+            'Accept': 'application/vnd.github+json',
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            description: 'SyncTask 24/7 Cloud Sync Storage (Private)',
+            public: false,
+            files: {
+              'synctask-data.json': {
+                content: payloadString
+              }
+            }
+          })
+        });
+
+        if (!createRes.ok) {
+          const errData = await createRes.json().catch(() => ({}));
+          throw new Error(errData.message || `GitHub create failed: HTTP ${createRes.status}`);
+        }
+
+        const newGist = await createRes.json();
+        ghGistId = newGist.id;
+        await this.storage.setSetting('githubGistId', ghGistId);
+      } else {
+        // Update existing Gist
+        const updateRes = await fetch(`https://api.github.com/gists/${ghGistId}`, {
+          method: 'PATCH',
+          headers: {
+            'Authorization': `Bearer ${ghToken}`,
+            'Accept': 'application/vnd.github+json',
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            files: {
+              'synctask-data.json': {
+                content: payloadString
+              }
+            }
+          })
+        });
+
+        if (!updateRes.ok) {
+          const errData = await updateRes.json().catch(() => ({}));
+          throw new Error(errData.message || `GitHub update failed: HTTP ${updateRes.status}`);
+        }
+      }
+
+      await this.storage.setSetting('githubToken', ghToken);
+      await this.storage.setSetting('cloudSyncEnabled', true);
+      this._notify('tasks_synced', { count: allCurrentTasks.length, source: 'github_gist' });
+      return { success: true, gistId: ghGistId, total: allCurrentTasks.length };
+    } catch (err) {
+      console.warn('GitHub sync error:', err.message);
       this._notify('sync_error', { message: err.message });
       return { success: false, error: err.message };
     }
