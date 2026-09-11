@@ -47,11 +47,19 @@
   --p5-cyan: #38bdf8;
 }
 
-/* Base Universal Reset */
-* {
+/* Base Universal Reset & Seamless Scrollbar Suppression */
+*, *::before, *::after {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
+*::-webkit-scrollbar {
+  display: none !important; /* Chrome, Safari, Opera, Edge, Electron */
+  width: 0 !important;
+  height: 0 !important;
 }
 
 html, body {
@@ -62,6 +70,15 @@ html, body {
   font-family: var(--p5-font-sub);
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
 }
 
 /* Persona 5 Atmosphere & Comic Halftone */
@@ -350,6 +367,13 @@ button {
   overflow-y: auto;
   overflow-x: hidden;
   padding-right: 4px;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.nav-section::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
 }
 
 .nav-title {
@@ -719,6 +743,14 @@ button {
   gap: 10px;
   overflow-x: auto;
   padding-bottom: 6px;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.filter-tabs::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
 }
 
 .filter-tab {
@@ -1134,6 +1166,14 @@ dialog::backdrop {
   border-bottom: 2px solid var(--p5-red);
   transform: skewX(-6deg);
   overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.sync-tabs::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
 }
 
 .sync-tab-btn {
