@@ -404,23 +404,39 @@ document.addEventListener('DOMContentLoaded', async () => {
         await window.storageEngine.saveTask(task);
 
         if (task.completed) {
-          // Trigger Persona All-Out Attack Full-Screen Comic Animation
+          // Trigger Persona All-Out Attack Full-Screen Comic Animation (3000ms)
           const aoa = document.getElementById('p5AoaOverlay');
           if (aoa) {
             aoa.classList.add('active');
             window.p5Audio?.playSlashAttack();
             setTimeout(() => {
               aoa.classList.remove('active');
-            }, 850);
+            }, 3000);
           }
 
           if (typeof confetti === 'function') {
             confetti({
-              particleCount: 75,
-              spread: 85,
-              origin: { y: 0.6 },
+              particleCount: 80,
+              spread: 90,
+              origin: { y: 0.55 },
               colors: ['#e60012', '#ffe600', '#ffffff', '#000000']
             });
+            setTimeout(() => {
+              confetti({
+                particleCount: 60,
+                spread: 110,
+                origin: { y: 0.5 },
+                colors: ['#e60012', '#ffe600', '#ffffff']
+              });
+            }, 800);
+            setTimeout(() => {
+              confetti({
+                particleCount: 40,
+                spread: 120,
+                origin: { y: 0.45 },
+                colors: ['#e60012', '#ffe600']
+              });
+            }, 1600);
           }
           showToast(`Target Eliminated! Heart Changed!`, 'success');
         } else {

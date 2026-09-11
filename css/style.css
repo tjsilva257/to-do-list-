@@ -1318,7 +1318,7 @@ dialog::backdrop {
   height: 100%;
   background: var(--p5-red);
   clip-path: polygon(0 0, 100% 0, 100% 70%, 0 30%);
-  animation: aoa-slash-in 0.4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation: aoa-slash-top 3s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
 .p5-aoa-slash-bottom {
@@ -1329,7 +1329,7 @@ dialog::backdrop {
   height: 100%;
   background: #000000;
   clip-path: polygon(0 70%, 100% 30%, 100% 100%, 0 100%);
-  animation: aoa-slash-in 0.4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation: aoa-slash-bottom 3s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
 .p5-aoa-banner {
@@ -1346,19 +1346,29 @@ dialog::backdrop {
   border: 5px solid #000000;
   box-shadow: 10px 10px 0px var(--p5-red);
   text-align: center;
-  animation: aoa-banner-pop 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+  animation: aoa-banner-hold 3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
 }
 
-@keyframes aoa-slash-in {
-  0% { transform: translateY(0); }
-  50% { transform: translateY(100%); }
-  100% { transform: translateY(0); }
+@keyframes aoa-slash-top {
+  0% { transform: translateY(0); opacity: 1; }
+  10% { transform: translateY(100%); opacity: 1; }
+  88% { transform: translateY(100%); opacity: 1; }
+  100% { transform: translateY(100%); opacity: 0; }
 }
 
-@keyframes aoa-banner-pop {
-  0% { transform: translate(-50%, -50%) scale(0.3) skewX(-14deg) rotate(-4deg); opacity: 0; }
-  50% { transform: translate(-50%, -50%) scale(1.1) skewX(-14deg) rotate(-4deg); opacity: 1; }
-  100% { transform: translate(-50%, -50%) scale(1) skewX(-14deg) rotate(-4deg); opacity: 1; }
+@keyframes aoa-slash-bottom {
+  0% { transform: translateY(0); opacity: 1; }
+  10% { transform: translateY(-100%); opacity: 1; }
+  88% { transform: translateY(-100%); opacity: 1; }
+  100% { transform: translateY(-100%); opacity: 0; }
+}
+
+@keyframes aoa-banner-hold {
+  0% { transform: translate(-50%, -50%) scale(0.2) skewX(-14deg) rotate(-6deg); opacity: 0; }
+  8% { transform: translate(-50%, -50%) scale(1.15) skewX(-14deg) rotate(-4deg); opacity: 1; }
+  12% { transform: translate(-50%, -50%) scale(1) skewX(-14deg) rotate(-4deg); opacity: 1; }
+  88% { transform: translate(-50%, -50%) scale(1) skewX(-14deg) rotate(-4deg); opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(1.06) skewX(-14deg) rotate(-4deg); opacity: 0; }
 }
 
 /* ==========================================================================

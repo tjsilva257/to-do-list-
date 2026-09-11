@@ -16,12 +16,12 @@
   <link rel="alternate icon" type="image/png" href="assets/icon.png">
 
   <!-- Stylesheet with Cache Buster -->
-  <link rel="stylesheet" href="css/style.css?v=6.0">
+  <link rel="stylesheet" href="css/style.css?v=7.0">
 
   <!-- External Libraries & Synthesizer -->
   <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
-  <script src="js/p5-audio.js?v=6.0"></script>
+  <script src="js/p5-audio.js?v=7.0"></script>
 </head>
 <body>
   <!-- All-Out Attack Full-Screen Wipe Overlay -->
@@ -369,15 +369,15 @@
   <div class="toast-container" id="toastContainer" aria-live="polite"></div>
 
   <!-- Scripts with Cache Buster -->
-  <script src="js/storage.js?v=6.0"></script>
-  <script src="js/sync.js?v=6.0"></script>
-  <script src="js/app.js?v=6.0"></script>
+  <script src="js/storage.js?v=7.0"></script>
+  <script src="js/sync.js?v=7.0"></script>
+  <script src="js/app.js?v=7.0"></script>
 
   <!-- Service Worker -->
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js?v=6.0').catch((err) => {
+        navigator.serviceWorker.register('./sw.js?v=7.0').catch((err) => {
           console.log('SW registration skipped:', err);
         });
       });
