@@ -15,12 +15,25 @@ class SyncEngine {
     this.apiUrl = '';
     this.autoSyncEnabled = true;
 
+    // Live WebSocket Sync State
+    this.wsClient = null;
+    this.wsType = 'cloud'; // 'cloud' (secure wss:// broker) or 'local' (ws://localhost:3001)
+    this.wsStatus = 'disconnected'; // 'disconnected', 'connecting', 'connected'
+    this.wsRoomCode = 'PHANTOM-THIEVES';
+    this.wsLocalUrl = 'ws://localhost:3001';
+    this.clientId = 'client-' + Math.random().toString(36).substring(2, 9);
+    this.wsReconnectTimer = null;
+
     this.init();
+    this._setupLifecycleListeners();
   }
 
   async init() {
     this.apiUrl = await this.storage.getSetting('apiUrl', window.location.origin + window.location.pathname.replace(/\/[^/]*$/, '') + '/api/sync.php');
     this.savedSyncCode = await this.storage.getSetting('syncCode', null);
+    this.wsRoomCode = (await this.storage.getSetting('wsRoomCode', 'PHANTOM-THIEVES')).toUpperCase().trim();
+    this.wsType = await this.storage.getSetting('wsType', 'cloud');
+    this.wsLocalUrl = await this.storage.getSetting('wsLocalUrl', 'ws://' + (typeof window !== 'undefined' && window.location.hostname ? window.location.hostname : 'localhost') + ':3001');
   }
 
   // --- Event Listener Registration ---
@@ -374,6 +387,282 @@ class SyncEngine {
       this._notify('sync_error', { message: err.message });
       return { success: false, error: err.message };
     }
+  }
+
+  // --- Live WebSocket Real-Time Sync (Cloud & Local) ---
+
+  async connectWebSocket(roomCode = null, type = null, localUrl = null) {
+    if (roomCode) {
+      this.wsRoomCode = roomCode.toUpperCase().trim();
+      await this.storage.setSetting('wsRoomCode', this.wsRoomCode);
+    } else {
+      this.wsRoomCode = (await this.storage.getSetting('wsRoomCode', 'PHANTOM-THIEVES')).toUpperCase().trim();
+    }
+
+    if (type) {
+      this.wsType = type;
+      await this.storage.setSetting('wsType', this.wsType);
+    } else {
+      this.wsType = await this.storage.getSetting('wsType', 'cloud');
+    }
+
+    if (localUrl) {
+      this.wsLocalUrl = localUrl.trim();
+      await this.storage.setSetting('wsLocalUrl', this.wsLocalUrl);
+    } else {
+      this.wsLocalUrl = await this.storage.getSetting('wsLocalUrl', 'ws://' + (typeof window !== 'undefined' && window.location.hostname ? window.location.hostname : 'localhost') + ':3001');
+    }
+
+    this.disconnectWebSocket();
+
+    this.wsStatus = 'connecting';
+    this._notify('ws_status', { status: 'connecting', room: this.wsRoomCode, type: this.wsType });
+
+    if (this.wsType === 'cloud') {
+      this._connectCloudWebSocket();
+    } else {
+      this._connectLocalWebSocket();
+    }
+  }
+
+  _connectCloudWebSocket() {
+    if (typeof mqtt === 'undefined') {
+      console.warn('MQTT library not yet loaded for Cloud WebSocket, retrying...');
+      setTimeout(() => {
+        if (this.wsStatus === 'connecting' && typeof mqtt !== 'undefined') {
+          this._connectCloudWebSocket();
+        }
+      }, 1500);
+      return;
+    }
+
+    const brokerUrl = 'wss://broker.emqx.io:8084/mqtt';
+    const topic = `synctask/room/${this.wsRoomCode}`;
+
+    try {
+      this.wsClient = mqtt.connect(brokerUrl, {
+        clientId: this.clientId,
+        clean: true,
+        connectTimeout: 8000,
+        reconnectPeriod: 4000
+      });
+
+      this.wsClient.on('connect', () => {
+        this.wsStatus = 'connected';
+        this._notify('ws_status', { status: 'connected', room: this.wsRoomCode, type: 'cloud' });
+
+        this.wsClient.subscribe(topic, (err) => {
+          if (!err) {
+            // Announce presence & ask existing peers in room for latest state
+            this.wsClient.publish(topic, JSON.stringify({
+              type: 'DEVICE_ANNOUNCE',
+              clientId: this.clientId,
+              room: this.wsRoomCode,
+              timestamp: Date.now()
+            }));
+          }
+        });
+      });
+
+      this.wsClient.on('message', (t, msg) => {
+        try {
+          const payload = JSON.parse(msg.toString());
+          this._handleIncomingWebSocketMessage(payload);
+        } catch (e) {
+          console.warn('Error parsing incoming Cloud WS message:', e);
+        }
+      });
+
+      this.wsClient.on('reconnect', () => {
+        this.wsStatus = 'connecting';
+        this._notify('ws_status', { status: 'connecting', room: this.wsRoomCode, type: 'cloud' });
+      });
+
+      this.wsClient.on('close', () => {
+        if (this.wsStatus === 'connected') {
+          this.wsStatus = 'connecting';
+          this._notify('ws_status', { status: 'connecting', room: this.wsRoomCode, type: 'cloud' });
+        }
+      });
+
+      this.wsClient.on('error', (err) => {
+        console.warn('MQTT Cloud WS Error:', err.message);
+      });
+    } catch (e) {
+      console.error('Failed to init Cloud WS:', e);
+      this.wsStatus = 'disconnected';
+      this._notify('ws_status', { status: 'disconnected', error: e.message });
+    }
+  }
+
+  _connectLocalWebSocket() {
+    try {
+      const url = this.wsLocalUrl.startsWith('ws://') || this.wsLocalUrl.startsWith('wss://')
+        ? this.wsLocalUrl
+        : `ws://${this.wsLocalUrl}`;
+
+      this.wsClient = new WebSocket(url);
+
+      this.wsClient.onopen = () => {
+        this.wsStatus = 'connected';
+        this._notify('ws_status', { status: 'connected', room: this.wsRoomCode, type: 'local' });
+
+        this.wsClient.send(JSON.stringify({
+          type: 'JOIN_ROOM',
+          room: this.wsRoomCode,
+          clientId: this.clientId
+        }));
+      };
+
+      this.wsClient.onmessage = (event) => {
+        try {
+          const payload = JSON.parse(event.data);
+          this._handleIncomingWebSocketMessage(payload);
+        } catch (e) {
+          console.warn('Error parsing local WS message:', e);
+        }
+      };
+
+      this.wsClient.onclose = () => {
+        this.wsStatus = 'disconnected';
+        this._notify('ws_status', { status: 'disconnected', room: this.wsRoomCode, type: 'local' });
+        if (this.wsType === 'local') {
+          clearTimeout(this.wsReconnectTimer);
+          this.wsReconnectTimer = setTimeout(() => {
+            if (this.wsType === 'local' && this.wsStatus !== 'connected') {
+              this._connectLocalWebSocket();
+            }
+          }, 3500);
+        }
+      };
+
+      this.wsClient.onerror = (err) => {
+        console.warn('Local WS error:', err);
+      };
+    } catch (e) {
+      console.error('Failed to init Local WS:', e);
+      this.wsStatus = 'disconnected';
+      this._notify('ws_status', { status: 'disconnected', error: e.message });
+    }
+  }
+
+  disconnectWebSocket() {
+    clearTimeout(this.wsReconnectTimer);
+    if (this.wsClient) {
+      try {
+        if (typeof this.wsClient.end === 'function') {
+          this.wsClient.end(true);
+        } else if (typeof this.wsClient.close === 'function') {
+          this.wsClient.close();
+        }
+      } catch (e) {}
+      this.wsClient = null;
+    }
+    this.wsStatus = 'disconnected';
+    this._notify('ws_status', { status: 'disconnected', room: this.wsRoomCode });
+  }
+
+  broadcastLiveWebSocketChange(task, action = 'upsert') {
+    const payload = action === 'delete'
+      ? { type: 'TASK_DELETE', taskId: task.id || task, clientId: this.clientId, timestamp: Date.now(), room: this.wsRoomCode }
+      : { type: 'TASK_UPSERT', task, clientId: this.clientId, timestamp: Date.now(), room: this.wsRoomCode };
+
+    if (this.wsType === 'cloud' && this.wsClient && this.wsStatus === 'connected') {
+      try {
+        const topic = `synctask/room/${this.wsRoomCode}`;
+        this.wsClient.publish(topic, JSON.stringify(payload));
+      } catch (e) {
+        console.warn('WS cloud publish error:', e);
+      }
+    } else if (this.wsType === 'local' && this.wsClient && this.wsClient.readyState === WebSocket.OPEN) {
+      try {
+        this.wsClient.send(JSON.stringify(payload));
+      } catch (e) {
+        console.warn('WS local send error:', e);
+      }
+    }
+
+    // Also propagate to P2P and GitHub Gist sync
+    this.broadcastLiveChange(task);
+  }
+
+  async _handleIncomingWebSocketMessage(payload) {
+    if (!payload || !payload.type) return;
+    if (payload.clientId === this.clientId || payload.senderId === this.clientId) {
+      return; // Ignore echo
+    }
+
+    switch (payload.type) {
+      case 'TASK_UPSERT': {
+        if (payload.task) {
+          const res = await this.storage.mergeTasks([payload.task]);
+          if (res.updated > 0) {
+            this._notify('ws_task_received', { task: payload.task, count: 1 });
+            this._notify('tasks_synced', { count: 1, source: 'websocket' });
+          }
+        }
+        break;
+      }
+
+      case 'TASK_DELETE': {
+        if (payload.taskId) {
+          await this.storage.deleteTask(payload.taskId);
+          this._notify('ws_task_deleted', { taskId: payload.taskId });
+          this._notify('tasks_synced', { count: 1, source: 'websocket' });
+        }
+        break;
+      }
+
+      case 'DEVICE_ANNOUNCE': {
+        const currentTasks = await this.storage.getAllTasks(true);
+        if (currentTasks.length > 0) {
+          const responsePayload = {
+            type: 'FULL_SYNC_RESPONSE',
+            room: this.wsRoomCode,
+            clientId: this.clientId,
+            tasks: currentTasks,
+            timestamp: Date.now()
+          };
+          if (this.wsType === 'cloud' && this.wsClient) {
+            this.wsClient.publish(`synctask/room/${this.wsRoomCode}`, JSON.stringify(responsePayload));
+          } else if (this.wsType === 'local' && this.wsClient && this.wsClient.readyState === WebSocket.OPEN) {
+            this.wsClient.send(JSON.stringify(responsePayload));
+          }
+        }
+        this._notify('ws_peer_joined', { peer: payload.clientId });
+        break;
+      }
+
+      case 'FULL_SYNC_RESPONSE':
+      case 'ROOM_JOINED':
+      case 'FULL_STATE': {
+        if (payload.tasks && Array.isArray(payload.tasks) && payload.tasks.length > 0) {
+          const res = await this.storage.mergeTasks(payload.tasks);
+          if (res.updated > 0) {
+            this._notify('tasks_synced', { count: res.updated, source: 'websocket_bulk' });
+          }
+        }
+        break;
+      }
+    }
+  }
+
+  _setupLifecycleListeners() {
+    if (typeof window === 'undefined') return;
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') {
+        if (this.wsStatus !== 'connected') {
+          console.log('[WS] App resumed, reconnecting WebSocket...');
+          this.connectWebSocket();
+        }
+      }
+    });
+
+    window.addEventListener('online', () => {
+      console.log('[WS] Network back online, reconnecting WebSocket...');
+      this.connectWebSocket();
+    });
   }
 }
 

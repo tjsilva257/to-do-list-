@@ -16,12 +16,13 @@
   <link rel="alternate icon" type="image/png" href="assets/icon.png">
 
   <!-- Stylesheet with Cache Buster -->
-  <link rel="stylesheet" href="css/style.css?v=7.0">
+  <link rel="stylesheet" href="css/style.css?v=8.0">
 
   <!-- External Libraries & Synthesizer -->
   <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+  <script src="https://unpkg.com/mqtt@5.3.5/dist/mqtt.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
-  <script src="js/p5-audio.js?v=7.0"></script>
+  <script src="js/p5-audio.js?v=8.0"></script>
 </head>
 <body>
   <!-- All-Out Attack Full-Screen Wipe Overlay -->
@@ -46,13 +47,13 @@
         <span class="brand-badge">P5</span>
       </div>
 
-      <!-- Sync Status Card (24/7 Cloud Sync) -->
+      <!-- Sync Status Card (Live WebSocket Sync) -->
       <div class="sync-status-card">
         <div class="sync-status-header">
-          <span>24/7 CLOUD SYNC</span>
+          <span>LIVE WS SYNC</span>
           <span class="sync-indicator">
             <span class="sync-dot online" id="syncDot"></span>
-            <span id="syncText">ONLINE</span>
+            <span id="syncText">WS LIVE</span>
           </span>
         </div>
         <button class="sync-btn-quick" id="btnOpenSyncModal">
@@ -273,15 +274,77 @@
         <button class="modal-close-btn" id="btnCloseSyncModal">&times;</button>
       </div>
       <div class="sync-tabs">
-        <button class="sync-tab-btn active" data-synctab="cloud">☁️ 24/7 CLOUD SYNC</button>
-        <button class="sync-tab-btn" data-synctab="p2p">⚡ INSTANT P2P</button>
-        <button class="sync-tab-btn" data-synctab="local">🏠 LOCAL WI-FI</button>
+        <button class="sync-tab-btn active" data-synctab="ws">⚡ LIVE WEBSOCKET</button>
+        <button class="sync-tab-btn" data-synctab="cloud">☁️ 24/7 CLOUD GIST</button>
+        <button class="sync-tab-btn" data-synctab="p2p">📡 P2P WEBRTC</button>
+        <button class="sync-tab-btn" data-synctab="local">🏠 LOCAL REST</button>
         <button class="sync-tab-btn" data-synctab="backup">💾 BACKUP LOG</button>
       </div>
 
       <div class="modal-body">
-        <!-- Tab 0: 24/7 Cloud Sync (GitHub Gist) -->
-        <div class="sync-tab-content active" id="tabContentCloud">
+        <!-- Tab 0: Live WebSocket Realtime Sync -->
+        <div class="sync-tab-content active" id="tabContentWs">
+          <div style="background: rgba(230, 0, 18, 0.12); border-left: 4px solid var(--p5-red); padding: 12px 16px; margin-bottom: 14px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+              <span style="font-weight: 700; color: #fff; font-size: 0.95rem; letter-spacing: 0.5px;">⚡ LIVE WEBSOCKET REALTIME CHANNEL</span>
+              <span class="sync-indicator">
+                <span class="sync-dot online" id="wsStatusDot"></span>
+                <strong id="wsStatusText" style="color: var(--p5-yellow); font-size: 0.85rem;">INITIALIZING...</strong>
+              </span>
+            </div>
+            <p style="font-size: 0.85rem; color: #d4d4d8; margin: 6px 0 0; line-height: 1.4;">
+              Type on your phone or laptop and watch targets synchronize live in sub-second real time without refreshing.
+            </p>
+          </div>
+
+          <div class="form-group">
+            <label for="wsRoomCodeInput">SHARED SYNC ROOM CODE</label>
+            <div style="display: flex; gap: 8px;">
+              <input type="text" id="wsRoomCodeInput" value="PHANTOM-THIEVES" placeholder="e.g. PHANTOM-THIEVES" style="text-transform: uppercase; font-weight: 700; letter-spacing: 1px; flex: 1;">
+              <button type="button" class="btn-primary" id="btnUpdateRoomCode" style="font-size: 0.85rem; padding: 8px 14px;">JOIN ROOM</button>
+              <button type="button" class="btn-secondary" id="btnRandomRoomCode" title="Generate Random Room Code" style="padding: 8px 12px;">🎲</button>
+            </div>
+            <span style="font-size: 0.78rem; color: #a1a1aa;">
+              Devices in the same room code share their mission board automatically.
+            </span>
+          </div>
+
+          <!-- Instant Phone Pairing QR Code -->
+          <div class="sync-code-display" style="margin-top: 12px; padding: 14px; background: rgba(0,0,0,0.6); border: 2px solid #3f3f46; text-align: center;">
+            <span style="font-size: 0.85rem; color: #fff; font-weight: 700; letter-spacing: 1px;">📱 SCAN TO PAIR YOUR PHONE LIVE</span>
+            <div class="qr-placeholder" id="wsQrContainer" style="margin: 10px auto; background: #ffffff; padding: 8px; border: 3px solid var(--p5-red); width: 156px; height: 156px; display: flex; align-items: center; justify-content: center;" title="Scan with phone camera to sync live">
+              <img id="wsQrCodeImg" src="" alt="WebSocket Pairing QR Code" style="display: none; width: 140px; height: 140px;">
+              <span id="wsQrLoading" style="font-size: 0.8rem; color: #000; font-weight: 700;">Generating QR...</span>
+            </div>
+            <button type="button" class="btn-secondary" id="btnCopyWsRoomLink" style="font-size: 0.85rem; padding: 6px 14px;">📋 COPY PAIRING LINK</button>
+          </div>
+
+          <!-- Engine Mode Toggle -->
+          <div class="form-group" style="margin-top: 14px;">
+            <label>WEBSOCKET ENGINE MODE</label>
+            <div style="display: flex; gap: 16px; margin-top: 4px; flex-wrap: wrap;">
+              <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 0.88rem; color: #fff;">
+                <input type="radio" name="wsModeRadio" value="cloud" id="wsModeCloud" checked>
+                <span>☁️ Cloud WSS (Recommended — Works Everywhere)</span>
+              </label>
+              <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 0.88rem; color: #fff;">
+                <input type="radio" name="wsModeRadio" value="local" id="wsModeLocal">
+                <span>🏠 Local Server</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="form-group" id="wsLocalUrlGroup" style="display: none; margin-top: 6px;">
+            <label for="wsLocalUrlInput">LOCAL SERVER URL</label>
+            <input type="text" id="wsLocalUrlInput" placeholder="ws://localhost:3001">
+            <span style="font-size: 0.75rem; color: #71717a;">Run <code>npm run server</code> on your laptop to start the local WebSocket server.</span>
+          </div>
+
+          <div id="wsLiveAlert" style="margin-top: 8px; font-size: 0.85rem;"></div>
+        </div>
+
+        <!-- Tab 1: 24/7 Cloud Sync (GitHub Gist) -->
+        <div class="sync-tab-content" id="tabContentCloud">
           <p style="font-size: 0.95rem; color: #a1a1aa; line-height: 1.5;">
             <strong>Never worry about your computer being turned off!</strong> Your tasks sync to your private GitHub Cloud 24/7 for free.
           </p>
@@ -369,15 +432,15 @@
   <div class="toast-container" id="toastContainer" aria-live="polite"></div>
 
   <!-- Scripts with Cache Buster -->
-  <script src="js/storage.js?v=7.0"></script>
-  <script src="js/sync.js?v=7.0"></script>
-  <script src="js/app.js?v=7.0"></script>
+  <script src="js/storage.js?v=8.0"></script>
+  <script src="js/sync.js?v=8.0"></script>
+  <script src="js/app.js?v=8.0"></script>
 
   <!-- Service Worker -->
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js?v=7.0').catch((err) => {
+        navigator.serviceWorker.register('./sw.js?v=8.0').catch((err) => {
           console.log('SW registration skipped:', err);
         });
       });

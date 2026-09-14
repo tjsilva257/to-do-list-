@@ -5,6 +5,7 @@
   "main": "main.js",
   "scripts": {
     "start": "electron .",
+    "server": "node server.js",
     "package": "electron-packager . SyncTask --platform=win32 --arch=x64 --out=dist --overwrite --icon=assets/icon.ico --prune=true",
     "package:zip": "npm run package && powershell Compress-Archive -Path dist/SyncTask-win32-x64/* -DestinationPath dist/SyncTask-Windows-x64.zip -Force",
     "package:builder": "electron-builder --win --x64",
@@ -53,5 +54,9 @@
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true
     }
+  },
+  "dependencies": {
+    "mqtt": "^5.15.2",
+    "ws": "^8.21.3"
   }
 }

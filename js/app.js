@@ -48,6 +48,22 @@ document.addEventListener('DOMContentLoaded', async () => {
   const btnRunCloudSync = document.getElementById('btnRunCloudSync');
   const cloudSyncResult = document.getElementById('cloudSyncResult');
 
+  // Live WebSocket Elements
+  const wsStatusDot = document.getElementById('wsStatusDot');
+  const wsStatusText = document.getElementById('wsStatusText');
+  const wsRoomCodeInput = document.getElementById('wsRoomCodeInput');
+  const btnUpdateRoomCode = document.getElementById('btnUpdateRoomCode');
+  const btnRandomRoomCode = document.getElementById('btnRandomRoomCode');
+  const wsQrContainer = document.getElementById('wsQrContainer');
+  const wsQrCodeImg = document.getElementById('wsQrCodeImg');
+  const wsQrLoading = document.getElementById('wsQrLoading');
+  const btnCopyWsRoomLink = document.getElementById('btnCopyWsRoomLink');
+  const wsModeCloud = document.getElementById('wsModeCloud');
+  const wsModeLocal = document.getElementById('wsModeLocal');
+  const wsLocalUrlGroup = document.getElementById('wsLocalUrlGroup');
+  const wsLocalUrlInput = document.getElementById('wsLocalUrlInput');
+  const wsLiveAlert = document.getElementById('wsLiveAlert');
+
   // Edit Modal Elements
   const editTaskModal = document.getElementById('editTaskModal');
   const btnCloseEditModal = document.getElementById('btnCloseEditModal');
@@ -371,8 +387,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     window.p5Audio?.playCardSent();
     showToast(`Calling Card Sent: "${title}"!`, 'success');
 
-    // Broadcast change to connected peers
-    window.syncEngine.broadcastLiveChange(saved);
+    // Broadcast change to connected peers via WebSocket
+    window.syncEngine.broadcastLiveWebSocketChange(saved, 'upsert');
 
     // Optional server sync in background if configured
     if (window.syncEngine.apiUrl) {
@@ -444,7 +460,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
 
         await renderTasks();
-        window.syncEngine.broadcastLiveChange(task);
+        window.syncEngine.broadcastLiveWebSocketChange(task, 'upsert');
       }
     } else if (action === 'edit') {
       const allTasks = await window.storageEngine.getAllTasks(false);
@@ -463,11 +479,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       showToast('Task deleted', 'info');
       await renderTasks();
 
-      const allTasks = await window.storageEngine.getAllTasks(true);
-      const tombstone = allTasks.find(t => t.id === taskId);
-      if (tombstone) {
-        window.syncEngine.broadcastLiveChange(tombstone);
-      }
+      window.syncEngine.broadcastLiveWebSocketChange(taskId, 'delete');
     }
   });
 
@@ -498,7 +510,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       closeEditModal();
       await renderTasks();
       showToast('Task updated!', 'success');
-      window.syncEngine.broadcastLiveChange(task);
+      window.syncEngine.broadcastLiveWebSocketChange(task, 'upsert');
     }
   });
 
@@ -537,6 +549,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   // --- Sync Modal & Tabs ---
   async function openSyncModal() {
     syncModal.showModal();
+    initWebSocketUI();
     initP2PDisplay();
     serverApiUrlInput.value = window.syncEngine.apiUrl;
     githubTokenInput.value = await window.storageEngine.getSetting('githubToken', '');
@@ -558,6 +571,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       btn.classList.add('active');
       const targetTab = btn.getAttribute('data-synctab');
+      if (targetTab === 'ws') document.getElementById('tabContentWs').classList.add('active');
       if (targetTab === 'cloud') document.getElementById('tabContentCloud').classList.add('active');
       if (targetTab === 'p2p') document.getElementById('tabContentP2p').classList.add('active');
       if (targetTab === 'local') document.getElementById('tabContentLocal').classList.add('active');
@@ -593,6 +607,141 @@ document.addEventListener('DOMContentLoaded', async () => {
     btnRunCloudSync.disabled = false;
     btnRunCloudSync.textContent = '☁️ Sync Now (24/7)';
   });
+
+  // --- Live WebSocket Sync UI & Event Handlers ---
+  function updateWsStatusDisplay(data) {
+    if (!wsStatusDot || !wsStatusText) return;
+    const status = data ? data.status : window.syncEngine.wsStatus;
+    const room = (data ? data.room : window.syncEngine.wsRoomCode) || 'PHANTOM-THIEVES';
+    const type = data ? data.type : window.syncEngine.wsType;
+
+    if (status === 'connected') {
+      wsStatusDot.className = 'sync-dot online';
+      wsStatusText.textContent = `ONLINE (${type === 'cloud' ? 'CLOUD WSS' : 'LOCAL'})`;
+      wsStatusText.style.color = 'var(--p5-yellow)';
+      syncDot.className = 'sync-dot online';
+      syncText.textContent = `LIVE WS: ${room}`;
+      if (wsLiveAlert) {
+        wsLiveAlert.innerHTML = `<span style="color: var(--success); font-weight: 700;">🟢 Live WebSocket Connected! Channel: <code>${room}</code></span>`;
+      }
+    } else if (status === 'connecting') {
+      wsStatusDot.className = 'sync-dot syncing';
+      wsStatusText.textContent = 'CONNECTING...';
+      wsStatusText.style.color = 'var(--p5-yellow)';
+      syncDot.className = 'sync-dot syncing';
+      syncText.textContent = 'WS CONNECTING...';
+      if (wsLiveAlert) {
+        wsLiveAlert.innerHTML = `<span style="color: var(--p5-yellow);">🟡 Connecting to WebSocket room <code>${room}</code>...</span>`;
+      }
+    } else {
+      wsStatusDot.className = 'sync-dot offline';
+      wsStatusText.textContent = 'DISCONNECTED';
+      wsStatusText.style.color = 'var(--p5-red)';
+      syncDot.className = 'sync-dot offline';
+      syncText.textContent = 'WS OFFLINE';
+      if (wsLiveAlert) {
+        wsLiveAlert.innerHTML = `<span style="color: var(--p5-red);">🔴 Disconnected. Click "JOIN ROOM" or check connection.</span>`;
+      }
+    }
+  }
+
+  function updateWsQrCode() {
+    if (!wsQrCodeImg || !wsQrLoading) return;
+    const currentRoom = window.syncEngine.wsRoomCode || 'PHANTOM-THIEVES';
+    const baseHref = window.location.href.split('?')[0];
+    const roomUrl = `${baseHref}?room=${encodeURIComponent(currentRoom)}`;
+
+    wsQrLoading.style.display = 'block';
+    wsQrCodeImg.style.display = 'none';
+
+    const qrApi = `https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=${encodeURIComponent(roomUrl)}`;
+    wsQrCodeImg.src = qrApi;
+    wsQrCodeImg.onload = () => {
+      wsQrLoading.style.display = 'none';
+      wsQrCodeImg.style.display = 'block';
+    };
+  }
+
+  async function initWebSocketUI() {
+    if (wsRoomCodeInput) {
+      wsRoomCodeInput.value = window.syncEngine.wsRoomCode || 'PHANTOM-THIEVES';
+    }
+    if (wsLocalUrlInput) {
+      wsLocalUrlInput.value = window.syncEngine.wsLocalUrl || ('ws://' + (window.location.hostname || 'localhost') + ':3001');
+    }
+
+    if (window.syncEngine.wsType === 'local') {
+      if (wsModeLocal) wsModeLocal.checked = true;
+      if (wsLocalUrlGroup) wsLocalUrlGroup.style.display = 'block';
+    } else {
+      if (wsModeCloud) wsModeCloud.checked = true;
+      if (wsLocalUrlGroup) wsLocalUrlGroup.style.display = 'none';
+    }
+
+    updateWsStatusDisplay();
+    updateWsQrCode();
+  }
+
+  if (btnUpdateRoomCode) {
+    btnUpdateRoomCode.addEventListener('click', async () => {
+      const room = (wsRoomCodeInput.value || '').toUpperCase().trim();
+      if (!room) {
+        showToast('Please enter a room code', 'error');
+        return;
+      }
+      const mode = wsModeLocal && wsModeLocal.checked ? 'local' : 'cloud';
+      const localUrl = wsLocalUrlInput ? wsLocalUrlInput.value.trim() : null;
+
+      btnUpdateRoomCode.disabled = true;
+      btnUpdateRoomCode.textContent = 'CONNECTING...';
+
+      await window.syncEngine.connectWebSocket(room, mode, localUrl);
+      updateWsQrCode();
+      showToast(`Connecting to Room: ${room}...`, 'sync');
+
+      setTimeout(() => {
+        btnUpdateRoomCode.disabled = false;
+        btnUpdateRoomCode.textContent = 'JOIN ROOM';
+      }, 1000);
+    });
+  }
+
+  if (btnRandomRoomCode) {
+    btnRandomRoomCode.addEventListener('click', async () => {
+      const randHex = Math.random().toString(16).substring(2, 6).toUpperCase();
+      const newRoom = `PHANTOM-${randHex}`;
+      wsRoomCodeInput.value = newRoom;
+      btnUpdateRoomCode.click();
+    });
+  }
+
+  if (btnCopyWsRoomLink) {
+    btnCopyWsRoomLink.addEventListener('click', () => {
+      const currentRoom = window.syncEngine.wsRoomCode || 'PHANTOM-THIEVES';
+      const baseHref = window.location.href.split('?')[0];
+      const roomUrl = `${baseHref}?room=${encodeURIComponent(currentRoom)}`;
+      navigator.clipboard.writeText(roomUrl).then(() => {
+        showToast('Room link copied! Paste on your phone or scan the QR code.', 'success');
+      });
+    });
+  }
+
+  if (wsModeCloud) {
+    wsModeCloud.addEventListener('change', () => {
+      if (wsLocalUrlGroup) wsLocalUrlGroup.style.display = 'none';
+      const room = (wsRoomCodeInput.value || '').toUpperCase().trim();
+      window.syncEngine.connectWebSocket(room, 'cloud');
+    });
+  }
+
+  if (wsModeLocal) {
+    wsModeLocal.addEventListener('change', () => {
+      if (wsLocalUrlGroup) wsLocalUrlGroup.style.display = 'block';
+      const room = (wsRoomCodeInput.value || '').toUpperCase().trim();
+      const localUrl = wsLocalUrlInput ? wsLocalUrlInput.value.trim() : null;
+      window.syncEngine.connectWebSocket(room, 'local', localUrl);
+    });
+  }
 
   // --- P2P WebRTC Handling ---
   async function initP2PDisplay() {
@@ -651,7 +800,19 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Listen for sync engine events
   window.syncEngine.onSyncEvent((event, data) => {
-    if (event === 'device_connected') {
+    if (event === 'ws_status') {
+      updateWsStatusDisplay(data);
+    } else if (event === 'ws_task_received') {
+      window.p5Audio?.playSelect();
+      showToast(`⚡ Live Target: "${data.task.title}"`, 'success');
+      renderTasks();
+    } else if (event === 'ws_task_deleted') {
+      window.p5Audio?.playSelect();
+      showToast('⚡ Remote Target Eliminated!', 'info');
+      renderTasks();
+    } else if (event === 'ws_peer_joined') {
+      showToast('📱 Device linked to room!', 'info');
+    } else if (event === 'device_connected') {
       showToast(`Device paired! Syncing tasks...`, 'sync');
       syncDot.className = 'sync-dot online';
       syncText.textContent = `${data.total} device(s) connected`;
@@ -662,13 +823,21 @@ document.addEventListener('DOMContentLoaded', async () => {
         syncText.textContent = `P2P Ready: ${window.syncEngine.peerId.toUpperCase()}`;
       }
     } else if (event === 'tasks_synced') {
-      showToast(`Synchronized ${data.count} task(s)!`, 'sync');
+      showToast(`Synchronized ${data.count} target(s)!`, 'sync');
       renderTasks();
     }
   });
 
-  // Check URL parameter for instant QR pairing (?connect=st-xyz)
+  // Check URL parameters for instant WebSocket room (?room=PHANTOM-XXXX) or P2P (?connect=st-xyz)
   const urlParams = new URLSearchParams(window.location.search);
+  const autoRoom = urlParams.get('room');
+  if (autoRoom) {
+    const cleanRoom = autoRoom.toUpperCase().trim();
+    window.syncEngine.wsRoomCode = cleanRoom;
+    window.storageEngine.setSetting('wsRoomCode', cleanRoom);
+    showToast(`⚡ Joined Room: ${cleanRoom}!`, 'success');
+  }
+
   const autoConnectCode = urlParams.get('connect');
   if (autoConnectCode) {
     setTimeout(async () => {
@@ -764,15 +933,17 @@ document.addEventListener('DOMContentLoaded', async () => {
   await renderTasks();
   initP2PDisplay(); // auto-start P2P listening in background
 
+  // Launch Live WebSocket Sync (Cloud or Local)
+  window.syncEngine.connectWebSocket().then(() => {
+    updateWsStatusDisplay();
+    updateWsQrCode();
+  });
+
   // Auto-sync with 24/7 Cloud (GitHub Gist) if configured
   const cloudEnabled = await window.storageEngine.getSetting('cloudSyncEnabled', false);
   if (cloudEnabled) {
-    syncDot.className = 'sync-dot syncing';
-    syncText.textContent = 'Cloud Syncing...';
     window.syncEngine.syncWithGitHub().then((res) => {
       if (res && res.success) {
-        syncDot.className = 'sync-dot online';
-        syncText.textContent = 'Cloud 24/7 Active';
         renderTasks();
       }
     }).catch(() => {});
