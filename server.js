@@ -49,9 +49,11 @@ function saveTasksToFile(taskMap) {
   }
 }
 
-function getRoomState(roomCode) {
+function getRoomState() {
+  // ponytail: one shared board and one data file for the whole server; fine for one household, split per room if strangers share it
+  const roomCode = 'shared';
   if (!roomData.has(roomCode)) {
-    const initialMap = roomCode === 'default' || roomCode.startsWith('PHANTOM') ? loadInitialTasks() : new Map();
+    const initialMap = loadInitialTasks();
     roomData.set(roomCode, {
       tasks: initialMap,
       lastUpdated: Date.now()
@@ -106,8 +108,11 @@ const server = http.createServer((req, res) => {
   let parsedUrl = req.url.split('?')[0];
   let filePath = path.join(__dirname, parsedUrl === '/' ? 'index.html' : parsedUrl);
 
+  const rel = path.relative(__dirname, filePath);
+  const blocked = rel.startsWith('..') || path.isAbsolute(rel) || /^(api|node_modules)([\\/]|$)|(^|[\\/])\./i.test(rel);
+
   fs.stat(filePath, (err, stats) => {
-    if (err || !stats.isFile()) {
+    if (blocked || err || !stats.isFile()) {
       filePath = path.join(__dirname, 'index.html');
     }
 

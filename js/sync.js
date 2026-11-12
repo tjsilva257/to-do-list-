@@ -19,7 +19,7 @@ class SyncEngine {
     this.wsClient = null;
     this.wsType = 'cloud'; // 'cloud' (secure wss:// broker) or 'local' (ws://localhost:3001)
     this.wsStatus = 'disconnected'; // 'disconnected', 'connecting', 'connected'
-    this.wsRoomCode = 'PHANTOM-THIEVES';
+    this.wsRoomCode = ''; // no shared default: the room code is the encryption secret
     this.wsLocalUrl = 'ws://localhost:3001';
     this.clientId = 'client-' + Math.random().toString(36).substring(2, 9);
     this.wsReconnectTimer = null;
@@ -29,9 +29,9 @@ class SyncEngine {
   }
 
   async init() {
-    this.apiUrl = await this.storage.getSetting('apiUrl', window.location.origin + window.location.pathname.replace(/\/[^/]*$/, '') + '/api/sync.php');
+    this.apiUrl = await this.storage.getSetting('apiUrl', ''); // server sync is opt-in
     this.savedSyncCode = await this.storage.getSetting('syncCode', null);
-    this.wsRoomCode = (await this.storage.getSetting('wsRoomCode', 'PHANTOM-THIEVES')).toUpperCase().trim();
+    this.wsRoomCode = (await this.storage.getSetting('wsRoomCode', '')).toUpperCase().trim();
     this.wsType = await this.storage.getSetting('wsType', 'cloud');
     this.wsLocalUrl = await this.storage.getSetting('wsLocalUrl', 'ws://' + (typeof window !== 'undefined' && window.location.hostname ? window.location.hostname : 'localhost') + ':3001');
   }
@@ -63,7 +63,8 @@ class SyncEngine {
 
     return new Promise((resolve) => {
       // Use short, human-friendly id prefix
-      const code = customCode || this.savedSyncCode || ('st-' + Math.random().toString(36).substring(2, 7));
+      const saved = this.savedSyncCode && this.savedSyncCode.length >= 16 ? this.savedSyncCode : null;
+      const code = customCode || saved || SyncEngine.randomCode('st-');
       this.peer = new Peer(code, {
         debug: 1,
         config: {
@@ -83,6 +84,11 @@ class SyncEngine {
       });
 
       this.peer.on('connection', (conn) => {
+        // Pairing sends every task, so never accept silently
+        if (!confirm(`Device ${conn.peer} wants to pair and sync all tasks. Allow?`)) {
+          conn.on('open', () => conn.close());
+          return;
+        }
         this._setupP2PConnection(conn);
       });
 
@@ -91,7 +97,7 @@ class SyncEngine {
         if (err.type === 'unavailable-id') {
           // Retry with a random id if collision
           this.peer.destroy();
-          const fallback = 'st-' + Math.random().toString(36).substring(2, 7);
+          const fallback = SyncEngine.randomCode('st-');
           this.startP2P(fallback).then(resolve);
         } else {
           this._notify('error', { message: err.message });
@@ -278,6 +284,11 @@ class SyncEngine {
     if (!ghToken) {
       return { success: false, error: 'No GitHub Personal Access Token provided' };
     }
+    if (this._ghBusy) return { success: false, error: 'Sync already running' };
+    this._ghBusy = true;
+    const explicit = token !== null; // only the SYNC NOW button may create a gist
+    let pulled = 0;
+    let remoteTasks = null;
 
     try {
       this._notify('sync_start', { target: 'github' });
@@ -300,7 +311,8 @@ class SyncEngine {
             try {
               const remoteParsed = JSON.parse(file.content);
               if (remoteParsed.tasks && Array.isArray(remoteParsed.tasks)) {
-                await this.storage.mergeTasks(remoteParsed.tasks);
+                remoteTasks = remoteParsed.tasks;
+                pulled = (await this.storage.mergeTasks(remoteTasks)).updated;
               }
               if (remoteParsed.categories && Array.isArray(remoteParsed.categories)) {
                 await this.storage.saveCategories(remoteParsed.categories);
@@ -326,7 +338,11 @@ class SyncEngine {
         categories: categories
       }, null, 2);
 
+      const byId = list => JSON.stringify([...list].sort((a, b) => (a.id < b.id ? -1 : 1)));
+      const unchanged = remoteTasks && byId(remoteTasks) === byId(allCurrentTasks);
+
       if (!ghGistId) {
+        if (!explicit) throw new Error('Cloud sync is not set up on this device. Open Sync, 24/7 Cloud Gist.');
         // Create new private Gist
         const createRes = await fetch('https://api.github.com/gists', {
           method: 'POST',
@@ -354,7 +370,7 @@ class SyncEngine {
         const newGist = await createRes.json();
         ghGistId = newGist.id;
         await this.storage.setSetting('githubGistId', ghGistId);
-      } else {
+      } else if (!unchanged) {
         // Update existing Gist
         const updateRes = await fetch(`https://api.github.com/gists/${ghGistId}`, {
           method: 'PATCH',
@@ -379,13 +395,16 @@ class SyncEngine {
       }
 
       await this.storage.setSetting('githubToken', ghToken);
+      await this.storage.setSetting('githubGistId', ghGistId);
       await this.storage.setSetting('cloudSyncEnabled', true);
-      this._notify('tasks_synced', { count: allCurrentTasks.length, source: 'github_gist' });
+      if (pulled > 0) this._notify('tasks_synced', { count: pulled, source: 'github_gist' });
       return { success: true, gistId: ghGistId, total: allCurrentTasks.length };
     } catch (err) {
       console.warn('GitHub sync error:', err.message);
       this._notify('sync_error', { message: err.message });
       return { success: false, error: err.message };
+    } finally {
+      this._ghBusy = false;
     }
   }
 
@@ -396,7 +415,7 @@ class SyncEngine {
       this.wsRoomCode = roomCode.toUpperCase().trim();
       await this.storage.setSetting('wsRoomCode', this.wsRoomCode);
     } else {
-      this.wsRoomCode = (await this.storage.getSetting('wsRoomCode', 'PHANTOM-THIEVES')).toUpperCase().trim();
+      this.wsRoomCode = (await this.storage.getSetting('wsRoomCode', '')).toUpperCase().trim();
     }
 
     if (type) {
@@ -413,7 +432,22 @@ class SyncEngine {
       this.wsLocalUrl = await this.storage.getSetting('wsLocalUrl', 'ws://' + (typeof window !== 'undefined' && window.location.hostname ? window.location.hostname : 'localhost') + ':3001');
     }
 
+    if (this.wsRoomCode && this.wsType === 'cloud') {
+      if (!crypto.subtle) {
+        this.disconnectWebSocket();
+        throw new Error('Encrypted live sync needs https or localhost. Use Local Server mode on this address.');
+      }
+      // The code is the encryption key, so a short one (like the old public default) is not private
+      if (this.wsRoomCode.length < 16) {
+        this.wsRoomCode = '';
+        await this.storage.setSetting('wsRoomCode', '');
+        this.disconnectWebSocket();
+        throw new Error('That room code is too short to be private. Press 🎲 to create one.');
+      }
+      await this._deriveRoomKeys();
+    }
     this.disconnectWebSocket();
+    if (!this.wsRoomCode) return; // live sync is opt-in
 
     this.wsStatus = 'connecting';
     this._notify('ws_status', { status: 'connecting', room: this.wsRoomCode, type: this.wsType });
@@ -437,7 +471,7 @@ class SyncEngine {
     }
 
     const brokerUrl = 'wss://broker.emqx.io:8084/mqtt';
-    const topic = `synctask/room/${this.wsRoomCode}`;
+    const topic = this.wsTopic;
 
     try {
       this.wsClient = mqtt.connect(brokerUrl, {
@@ -454,22 +488,19 @@ class SyncEngine {
         this.wsClient.subscribe(topic, (err) => {
           if (!err) {
             // Announce presence & ask existing peers in room for latest state
-            this.wsClient.publish(topic, JSON.stringify({
-              type: 'DEVICE_ANNOUNCE',
-              clientId: this.clientId,
-              room: this.wsRoomCode,
-              timestamp: Date.now()
-            }));
+            this._publishCloud({ type: 'DEVICE_ANNOUNCE', clientId: this.clientId, timestamp: Date.now() });
           }
         });
       });
 
-      this.wsClient.on('message', (t, msg) => {
+      this.wsClient.on('message', async (t, msg) => {
         try {
-          const payload = JSON.parse(msg.toString());
-          this._handleIncomingWebSocketMessage(payload);
+          // Anything not encrypted with our room key fails here and is dropped
+          const { iv, data } = JSON.parse(msg.toString());
+          const plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: SyncEngine.fromB64(iv) }, this.wsKey, SyncEngine.fromB64(data));
+          this._handleIncomingWebSocketMessage(JSON.parse(new TextDecoder().decode(plain)));
         } catch (e) {
-          console.warn('Error parsing incoming Cloud WS message:', e);
+          console.warn('Dropped unreadable Cloud WS message');
         }
       });
 
@@ -546,6 +577,39 @@ class SyncEngine {
     }
   }
 
+  // --- End-to-end encryption for the public cloud broker ---
+  // Key and topic both come from the room code, so the broker and other users see only ciphertext.
+  // ponytail: single SHA-256, safe for generated codes (🎲); a short hand-typed code is guessable — switch to PBKDF2 if people pick their own.
+  async _deriveRoomKeys() {
+    const hash = async (label) => new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(label + this.wsRoomCode)));
+    this.wsKey = await crypto.subtle.importKey('raw', await hash('synctask-key:'), 'AES-GCM', false, ['encrypt', 'decrypt']);
+    this.wsTopic = 'synctask/room/' + Array.from((await hash('synctask-topic:')).slice(0, 16), b => b.toString(16).padStart(2, '0')).join('');
+  }
+
+  async _publishCloud(payload) {
+    try {
+      const iv = crypto.getRandomValues(new Uint8Array(12));
+      const data = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, this.wsKey, new TextEncoder().encode(JSON.stringify(payload)));
+      this.wsClient.publish(this.wsTopic, JSON.stringify({ iv: SyncEngine.toB64(iv), data: SyncEngine.toB64(new Uint8Array(data)) }));
+    } catch (e) {
+      console.warn('WS cloud publish error:', e);
+    }
+  }
+
+  static toB64(bytes) {
+    let s = '';
+    for (const b of bytes) s += String.fromCharCode(b);
+    return btoa(s);
+  }
+
+  static fromB64(str) {
+    return Uint8Array.from(atob(str), c => c.charCodeAt(0));
+  }
+
+  static randomCode(prefix = '') {
+    return prefix + Array.from(crypto.getRandomValues(new Uint8Array(10)), b => b.toString(16).padStart(2, '0')).join('');
+  }
+
   disconnectWebSocket() {
     clearTimeout(this.wsReconnectTimer);
     if (this.wsClient) {
@@ -568,12 +632,7 @@ class SyncEngine {
       : { type: 'TASK_UPSERT', task, clientId: this.clientId, timestamp: Date.now(), room: this.wsRoomCode };
 
     if (this.wsType === 'cloud' && this.wsClient && this.wsStatus === 'connected') {
-      try {
-        const topic = `synctask/room/${this.wsRoomCode}`;
-        this.wsClient.publish(topic, JSON.stringify(payload));
-      } catch (e) {
-        console.warn('WS cloud publish error:', e);
-      }
+      this._publishCloud(payload);
     } else if (this.wsType === 'local' && this.wsClient && this.wsClient.readyState === WebSocket.OPEN) {
       try {
         this.wsClient.send(JSON.stringify(payload));
@@ -624,7 +683,7 @@ class SyncEngine {
             timestamp: Date.now()
           };
           if (this.wsType === 'cloud' && this.wsClient) {
-            this.wsClient.publish(`synctask/room/${this.wsRoomCode}`, JSON.stringify(responsePayload));
+            this._publishCloud(responsePayload);
           } else if (this.wsType === 'local' && this.wsClient && this.wsClient.readyState === WebSocket.OPEN) {
             this.wsClient.send(JSON.stringify(responsePayload));
           }
@@ -652,16 +711,17 @@ class SyncEngine {
 
     document.addEventListener('visibilitychange', () => {
       if (document.visibilityState === 'visible') {
+        this.storage.getSetting('cloudSyncEnabled', false).then(on => { if (on) this.syncWithGitHub().catch(() => {}); });
         if (this.wsStatus !== 'connected') {
           console.log('[WS] App resumed, reconnecting WebSocket...');
-          this.connectWebSocket();
+          this.connectWebSocket().catch(() => {});
         }
       }
     });
 
     window.addEventListener('online', () => {
       console.log('[WS] Network back online, reconnecting WebSocket...');
-      this.connectWebSocket();
+      this.connectWebSocket().catch(() => {});
     });
   }
 }

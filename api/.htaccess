@@ -1,0 +1,2 @@
+# Stored tasks (api/data/) must never be downloadable directly
+RedirectMatch 403 (?i)/api/data(/|$)

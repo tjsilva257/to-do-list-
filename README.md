@@ -10,7 +10,7 @@
 ## ✨ Key Features
 
 - **📱 True Cross-Device Support**: Run on Windows, macOS, Linux, Android, and iOS.
-- **🔄 Real-Time Peer-to-Peer Sync**: Instant live synchronization between devices using WebRTC (PeerJS). Connect phone and computer simply by scanning a QR code or typing a 6-character code—**no account or complex server configuration required**!
+- **🔄 Real-Time Peer-to-Peer Sync**: Instant live synchronization between devices using WebRTC (PeerJS). Connect phone and computer by typing a pairing code—**no account or server required**.
 - **🏠 Local Wi-Fi & XAMPP Sync**: Built-in PHP & SQLite REST backend (`api/sync.php`) allowing all devices on your home or office Wi-Fi to synchronize effortlessly.
 - **💾 Offline-First Architecture**: 100% functional without an internet connection using IndexedDB and LocalStorage. Tombstone tracking (`deletedAt`) and timestamp-based conflict resolution prevent data loss.
 - **📦 Downloadable Releases**: Packaged as a standalone Windows desktop application (`.exe`) via Electron and GitHub Releases.
@@ -43,27 +43,50 @@ SyncTask is a **Progressive Web App (PWA)**:
 
 ---
 
+## 🔒 Privacy
+
+The app starts empty. Nothing is synced and no account is connected until you set it up on your own device. Tokens, Gist IDs and room codes are saved only in that device's browser storage, never in this repository. If you fork or host this repo, you bring your own.
+
+---
+
 ## 🔄 How to Synchronize Tasks Across Devices
 
-### Option 1: Instant P2P Sync (Zero Setup, Anywhere)
-1. Open SyncTask on **Device 1** (e.g., your PC) and click **"Sync Devices"**.
-2. A unique 6-character code (e.g. `ST-8X2K`) and a QR Code will appear.
-3. Open SyncTask on **Device 2** (e.g., your phone):
-   - Either scan the QR code with your phone camera, OR
-   - Click **"Sync Devices"**, enter the code into *"Connect to Another Device"*, and click **"Connect & Sync"**.
-4. Both devices are now paired! Any task you add, edit, or complete will instantly sync in real-time across both screens.
+### Option 1: 24/7 Cloud Sync (private GitHub Gist) — recommended
+1. On GitHub, create a personal access token with only the **gist** permission.
+2. First device: open **Sync → 24/7 Cloud Gist**, paste the token, leave the Gist ID empty and press **Sync Now**. The app creates a secret gist and shows its ID.
+3. Other devices: paste the same token **and** that Gist ID, then press **Sync Now**.
 
-### Option 2: Local Wi-Fi Sync (Via XAMPP)
-1. Place this project in your XAMPP `htdocs` folder (`c:\xampp\htdocs\to-do-list-`).
-2. Start Apache in your XAMPP Control Panel.
-3. Find your computer's local IP address (run `ipconfig` in terminal, e.g. `192.168.1.15`).
-4. On your other devices connected to the same Wi-Fi, open:
-   `http://192.168.1.15/to-do-list-/`
-5. All devices will automatically communicate with the central database (`api/sync.php`)!
+Keep the Gist ID to yourself: a secret gist can be read by anyone who has its ID.
 
-### Option 3: Manual Backup & Restore
-- Click the **💾 Backup** button in the bottom-left sidebar to download your tasks as a `.json` file.
-- Open SyncTask on another device, click **"Restore Backup"**, and select the `.json` file to merge your tasks.
+### Option 2: Live Sync (instant, end-to-end encrypted)
+1. Open **Sync → Live WebSocket** and press 🎲 to create a private room.
+2. Press **Copy Pairing Link** and open that link on your other device (send it to yourself privately). The room code is the encryption key, so treat it like a password.
+
+Live sync only works while both devices have the app open; use Option 1 as well so nothing is missed.
+
+### Option 3: Direct P2P
+Open **Sync → P2P WebRTC** on both devices and type one device's code into the other. The receiving device asks before it accepts.
+
+### Option 4: Home network server
+`npm run server` (Node) or `api/sync.php` (XAMPP) keep a copy on your own PC. They have no login, so use them only on a network you trust and never expose them to the internet.
+
+### Option 5: Manual Backup & Restore
+**Sync → Backup Log** downloads or restores a `.json` file.
+
+---
+
+## 🤖 Use it with Claude
+
+`tools/todo.mjs` lets Claude Code read and update the same private gist:
+
+1. Set up Option 1 above.
+2. Create `~/.synctask.json` (in your home folder, not in this repo):
+   ```json
+   { "token": "<your gist token>", "gistId": "<your Gist ID>" }
+   ```
+3. Try `node tools/todo.mjs list`.
+
+The `worklog` skill in `.claude/skills/` then lets you ask Claude things like "add what we did to my to-do list" or "write my daily summary". Tasks Claude adds show up the next time the app syncs.
 
 ---
 

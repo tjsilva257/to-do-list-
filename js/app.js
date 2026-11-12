@@ -28,8 +28,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   const syncText = document.getElementById('syncText');
   const mySyncCodeDisplay = document.getElementById('mySyncCodeDisplay');
   const btnCopySyncCode = document.getElementById('btnCopySyncCode');
-  const qrCodeImg = document.getElementById('qrCodeImg');
-  const qrLoading = document.getElementById('qrLoading');
   const remoteSyncCodeInput = document.getElementById('remoteSyncCodeInput');
   const btnConnectP2P = document.getElementById('btnConnectP2P');
   const connectedPeersList = document.getElementById('connectedPeersList');
@@ -54,9 +52,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   const wsRoomCodeInput = document.getElementById('wsRoomCodeInput');
   const btnUpdateRoomCode = document.getElementById('btnUpdateRoomCode');
   const btnRandomRoomCode = document.getElementById('btnRandomRoomCode');
-  const wsQrContainer = document.getElementById('wsQrContainer');
-  const wsQrCodeImg = document.getElementById('wsQrCodeImg');
-  const wsQrLoading = document.getElementById('wsQrLoading');
   const btnCopyWsRoomLink = document.getElementById('btnCopyWsRoomLink');
   const wsModeCloud = document.getElementById('wsModeCloud');
   const wsModeLocal = document.getElementById('wsModeLocal');
@@ -98,7 +93,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (type === 'error') icon = '⚠️';
     if (type === 'sync') icon = '🔄';
 
-    toast.innerHTML = `<span>${icon}</span><span>${message}</span>`;
+    toast.innerHTML = `<span>${icon}</span><span></span>`;
+    toast.lastChild.textContent = message;
     toastContainer.appendChild(toast);
 
     setTimeout(() => {
@@ -326,7 +322,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (task.priority === 'low') priorityLabel = 'ALERT: 0% MINOR';
 
       return `
-        <article class="task-card ${task.completed ? 'completed' : ''}" data-id="${task.id}">
+        <article class="task-card ${task.completed ? 'completed' : ''}" data-id="${escapeHtml(task.id)}">
           <label class="task-checkbox-container" title="${task.completed ? 'Mark incomplete' : 'Change Heart (Complete)'}">
             <input type="checkbox" class="task-checkbox-input" ${task.completed ? 'checked' : ''} data-action="toggle">
           </label>
@@ -341,9 +337,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             </div>
 
             <div class="task-badges">
-              <span class="badge badge-priority-${task.priority || 'medium'}">${priorityLabel}</span>
+              <span class="badge badge-priority-${['low', 'medium', 'high'].includes(task.priority) ? task.priority : 'medium'}">${priorityLabel}</span>
               ${task.category ? `<span class="badge badge-category">[${escapeHtml(task.category).toUpperCase()}]</span>` : ''}
-              ${task.dueDate ? `<span class="badge badge-date ${dateBadgeClass}">${dateBadgeText}</span>` : ''}
+              ${task.dueDate ? `<span class="badge badge-date ${dateBadgeClass}">${escapeHtml(dateBadgeText)}</span>` : ''}
             </div>
 
             ${task.notes ? `<div class="task-notes-snippet">${escapeHtml(task.notes)}</div>` : ''}
@@ -355,9 +351,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   function escapeHtml(text) {
     if (!text) return '';
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
+    return String(text).replace(/[&<>"']/g, c => '&#' + c.charCodeAt(0) + ';');
   }
 
   // --- Add Task Handler ---
@@ -416,6 +410,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       const task = allTasks.find(t => t.id === taskId);
       if (task) {
         task.completed = actionBtn.checked;
+        task.completedAt = task.completed ? Date.now() : null;
         task.updatedAt = Date.now();
         await window.storageEngine.saveTask(task);
 
@@ -595,13 +590,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     const result = await window.syncEngine.syncWithGitHub(token, gistId || null);
     if (result.success) {
       githubGistIdInput.value = result.gistId;
-      cloudSyncResult.innerHTML = `<span style="color: var(--success)">✅ 24/7 Cloud Sync Active! (Gist ID: <code>${result.gistId}</code>)</span>`;
+      cloudSyncResult.innerHTML = `<span style="color: var(--success)">✅ 24/7 Cloud Sync Active! (Gist ID: <code>${escapeHtml(result.gistId)}</code>)</span>`;
       syncDot.className = 'sync-dot online';
       syncText.textContent = 'Cloud 24/7 Active';
       showToast('24/7 Cloud Sync activated!', 'success');
       await renderTasks();
     } else {
-      cloudSyncResult.innerHTML = `<span style="color: var(--danger)">❌ Sync failed: ${result.error}</span>`;
+      cloudSyncResult.innerHTML = `<span style="color: var(--danger)">❌ Sync failed: ${escapeHtml(result.error)}</span>`;
       showToast(result.error, 'error');
     }
     btnRunCloudSync.disabled = false;
@@ -612,7 +607,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   function updateWsStatusDisplay(data) {
     if (!wsStatusDot || !wsStatusText) return;
     const status = data ? data.status : window.syncEngine.wsStatus;
-    const room = (data ? data.room : window.syncEngine.wsRoomCode) || 'PHANTOM-THIEVES';
+    const room = escapeHtml((data ? data.room : window.syncEngine.wsRoomCode) || '');
     const type = data ? data.type : window.syncEngine.wsType;
 
     if (status === 'connected') {
@@ -620,7 +615,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       wsStatusText.textContent = `ONLINE (${type === 'cloud' ? 'CLOUD WSS' : 'LOCAL'})`;
       wsStatusText.style.color = 'var(--p5-yellow)';
       syncDot.className = 'sync-dot online';
-      syncText.textContent = `LIVE WS: ${room}`;
+      syncText.textContent = 'LIVE SYNC ON';
       if (wsLiveAlert) {
         wsLiveAlert.innerHTML = `<span style="color: var(--success); font-weight: 700;">🟢 Live WebSocket Connected! Channel: <code>${room}</code></span>`;
       }
@@ -640,31 +635,14 @@ document.addEventListener('DOMContentLoaded', async () => {
       syncDot.className = 'sync-dot offline';
       syncText.textContent = 'WS OFFLINE';
       if (wsLiveAlert) {
-        wsLiveAlert.innerHTML = `<span style="color: var(--p5-red);">🔴 Disconnected. Click "JOIN ROOM" or check connection.</span>`;
+        wsLiveAlert.innerHTML = `<span style="color: var(--p5-red);">🔴 Off. Press 🎲 to create a private room, then use COPY PAIRING LINK on your other devices.</span>`;
       }
     }
   }
 
-  function updateWsQrCode() {
-    if (!wsQrCodeImg || !wsQrLoading) return;
-    const currentRoom = window.syncEngine.wsRoomCode || 'PHANTOM-THIEVES';
-    const baseHref = window.location.href.split('?')[0];
-    const roomUrl = `${baseHref}?room=${encodeURIComponent(currentRoom)}`;
-
-    wsQrLoading.style.display = 'block';
-    wsQrCodeImg.style.display = 'none';
-
-    const qrApi = `https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=${encodeURIComponent(roomUrl)}`;
-    wsQrCodeImg.src = qrApi;
-    wsQrCodeImg.onload = () => {
-      wsQrLoading.style.display = 'none';
-      wsQrCodeImg.style.display = 'block';
-    };
-  }
-
   async function initWebSocketUI() {
     if (wsRoomCodeInput) {
-      wsRoomCodeInput.value = window.syncEngine.wsRoomCode || 'PHANTOM-THIEVES';
+      wsRoomCodeInput.value = window.syncEngine.wsRoomCode || '';
     }
     if (wsLocalUrlInput) {
       wsLocalUrlInput.value = window.syncEngine.wsLocalUrl || ('ws://' + (window.location.hostname || 'localhost') + ':3001');
@@ -679,7 +657,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     updateWsStatusDisplay();
-    updateWsQrCode();
   }
 
   if (btnUpdateRoomCode) {
@@ -695,9 +672,12 @@ document.addEventListener('DOMContentLoaded', async () => {
       btnUpdateRoomCode.disabled = true;
       btnUpdateRoomCode.textContent = 'CONNECTING...';
 
-      await window.syncEngine.connectWebSocket(room, mode, localUrl);
-      updateWsQrCode();
-      showToast(`Connecting to Room: ${room}...`, 'sync');
+      try {
+        await window.syncEngine.connectWebSocket(room, mode, localUrl);
+        showToast('Connecting to your sync room...', 'sync');
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
 
       setTimeout(() => {
         btnUpdateRoomCode.disabled = false;
@@ -708,8 +688,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   if (btnRandomRoomCode) {
     btnRandomRoomCode.addEventListener('click', async () => {
-      const randHex = Math.random().toString(16).substring(2, 6).toUpperCase();
-      const newRoom = `PHANTOM-${randHex}`;
+      const newRoom = SyncEngine.randomCode('PHANTOM-').toUpperCase();
       wsRoomCodeInput.value = newRoom;
       btnUpdateRoomCode.click();
     });
@@ -717,11 +696,14 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   if (btnCopyWsRoomLink) {
     btnCopyWsRoomLink.addEventListener('click', () => {
-      const currentRoom = window.syncEngine.wsRoomCode || 'PHANTOM-THIEVES';
-      const baseHref = window.location.href.split('?')[0];
-      const roomUrl = `${baseHref}?room=${encodeURIComponent(currentRoom)}`;
+      const currentRoom = window.syncEngine.wsRoomCode;
+      if (!currentRoom) {
+        showToast('Create or join a room first', 'error');
+        return;
+      }
+      const roomUrl = `${window.location.href.split(/[?#]/)[0]}#room=${encodeURIComponent(currentRoom)}`;
       navigator.clipboard.writeText(roomUrl).then(() => {
-        showToast('Room link copied! Paste on your phone or scan the QR code.', 'success');
+        showToast('Pairing link copied! Open it on your other device. Keep it private.', 'success');
       });
     });
   }
@@ -730,7 +712,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     wsModeCloud.addEventListener('change', () => {
       if (wsLocalUrlGroup) wsLocalUrlGroup.style.display = 'none';
       const room = (wsRoomCodeInput.value || '').toUpperCase().trim();
-      window.syncEngine.connectWebSocket(room, 'cloud');
+      window.syncEngine.connectWebSocket(room, 'cloud').catch(err => showToast(err.message, 'error'));
     });
   }
 
@@ -739,7 +721,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (wsLocalUrlGroup) wsLocalUrlGroup.style.display = 'block';
       const room = (wsRoomCodeInput.value || '').toUpperCase().trim();
       const localUrl = wsLocalUrlInput ? wsLocalUrlInput.value.trim() : null;
-      window.syncEngine.connectWebSocket(room, 'local', localUrl);
+      window.syncEngine.connectWebSocket(room, 'local', localUrl).catch(err => showToast(err.message, 'error'));
     });
   }
 
@@ -753,14 +735,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         syncDot.className = 'sync-dot online';
         syncText.textContent = `P2P Ready: ${code.toUpperCase()}`;
 
-        // Generate QR code for mobile scanning
-        const connectUrl = window.location.href.split('?')[0] + `?connect=${code}`;
-        const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=${encodeURIComponent(connectUrl)}`;
-        qrCodeImg.src = qrUrl;
-        qrCodeImg.onload = () => {
-          qrCodeImg.style.display = 'block';
-          qrLoading.style.display = 'none';
-        };
       } else {
         mySyncCodeDisplay.textContent = 'P2P Offline';
       }
@@ -828,27 +802,24 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   });
 
-  // Check URL parameters for instant WebSocket room (?room=PHANTOM-XXXX) or P2P (?connect=st-xyz)
-  const urlParams = new URLSearchParams(window.location.search);
-  const autoRoom = urlParams.get('room');
-  if (autoRoom) {
-    const cleanRoom = autoRoom.toUpperCase().trim();
-    window.syncEngine.wsRoomCode = cleanRoom;
-    window.storageEngine.setSetting('wsRoomCode', cleanRoom);
-    showToast(`⚡ Joined Room: ${cleanRoom}!`, 'success');
-  }
-
-  const autoConnectCode = urlParams.get('connect');
-  if (autoConnectCode) {
-    setTimeout(async () => {
-      showToast(`Attempting to pair with ${autoConnectCode.toUpperCase()}...`, 'sync');
-      try {
-        await window.syncEngine.connectToDevice(autoConnectCode);
-        showToast(`Paired with ${autoConnectCode.toUpperCase()}!`, 'success');
-      } catch (err) {
-        console.warn('Auto pair error:', err);
+  // Pairing links (#room=CODE or #connect=CODE). The fragment never reaches a server.
+  // Joining shares every task with whoever made the link, so always ask first.
+  const linkParams = new URLSearchParams(window.location.hash.slice(1));
+  const linkRoom = (linkParams.get('room') || '').toUpperCase().trim();
+  const linkPeer = (linkParams.get('connect') || '').trim();
+  if (linkRoom || linkPeer) {
+    history.replaceState(null, '', window.location.pathname);
+    if (confirm('This link wants to pair this device and sync ALL your tasks. Only continue if you created the link yourself.')) {
+      if (linkRoom) {
+        await window.storageEngine.setSetting('wsRoomCode', linkRoom);
+        showToast('⚡ Joined your sync room!', 'success');
       }
-    }, 1500);
+      if (linkPeer) {
+        window.syncEngine.connectToDevice(linkPeer)
+          .then(() => showToast('Paired!', 'success'))
+          .catch(err => showToast(err.message || 'Pairing failed', 'error'));
+      }
+    }
   }
 
   // --- Local Server Sync ---
@@ -864,14 +835,14 @@ document.addEventListener('DOMContentLoaded', async () => {
       });
       const data = await res.json();
       if (data.status === 'ok') {
-        serverSyncResult.innerHTML = `<span style="color: var(--success)">✅ Connected to ${data.server}!</span>`;
+        serverSyncResult.innerHTML = `<span style="color: var(--success)">✅ Connected to ${escapeHtml(data.server)}!</span>`;
         await window.storageEngine.setSetting('apiUrl', url);
         window.syncEngine.apiUrl = url;
       } else {
         serverSyncResult.innerHTML = `<span style="color: var(--danger)">❌ Invalid server response</span>`;
       }
     } catch (e) {
-      serverSyncResult.innerHTML = `<span style="color: var(--danger)">❌ Connection failed: ${e.message}</span>`;
+      serverSyncResult.innerHTML = `<span style="color: var(--danger)">❌ Connection failed: ${escapeHtml(e.message)}</span>`;
     }
   });
 
@@ -887,7 +858,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       serverSyncResult.innerHTML = `<span style="color: var(--success)">✅ Synced! (${result.updated} updated)</span>`;
       renderTasks();
     } else {
-      serverSyncResult.innerHTML = `<span style="color: var(--danger)">❌ Sync failed: ${result.error}</span>`;
+      serverSyncResult.innerHTML = `<span style="color: var(--danger)">❌ Sync failed: ${escapeHtml(result.error)}</span>`;
     }
   });
 
@@ -931,13 +902,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // --- Initial Launch ---
   await renderTasks();
-  initP2PDisplay(); // auto-start P2P listening in background
 
   // Launch Live WebSocket Sync (Cloud or Local)
-  window.syncEngine.connectWebSocket().then(() => {
-    updateWsStatusDisplay();
-    updateWsQrCode();
-  });
+  window.syncEngine.connectWebSocket().then(() => updateWsStatusDisplay()).catch(err => showToast(err.message, 'error'));
+
+  // Keep listening for P2P pairing only on devices that already use it (incoming requests still ask first)
+  if (await window.storageEngine.getSetting('syncCode', null)) initP2PDisplay();
 
   // Auto-sync with 24/7 Cloud (GitHub Gist) if configured
   const cloudEnabled = await window.storageEngine.getSetting('cloudSyncEnabled', false);

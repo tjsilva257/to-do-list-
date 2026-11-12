@@ -1,4 +1,4 @@
-const CACHE_NAME = 'synctask-persona-v8';
+const CACHE_NAME = 'synctask-persona-v10';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -44,7 +44,7 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
-  if (url.pathname.includes('/api/') || event.request.method !== 'GET') {
+  if (url.origin !== self.location.origin || url.pathname.includes('/api/') || event.request.method !== 'GET') {
     return;
   }
 

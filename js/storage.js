@@ -183,10 +183,6 @@ class StorageEngine {
     await this.isReady;
     const defaultSettings = {
       theme: 'dark',
-      githubToken: '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',
-      githubGistId: '85e8ded56ce90d2814cde739829d031f',
-      cloudSyncEnabled: true,
-      wsRoomCode: 'PHANTOM-THIEVES',
       wsType: 'cloud',
       wsLocalUrl: 'ws://' + (typeof window !== 'undefined' && window.location.hostname ? window.location.hostname : 'localhost') + ':3001'
     };

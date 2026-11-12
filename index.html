@@ -16,13 +16,13 @@
   <link rel="alternate icon" type="image/png" href="assets/icon.png">
 
   <!-- Stylesheet with Cache Buster -->
-  <link rel="stylesheet" href="css/style.css?v=8.0">
+  <link rel="stylesheet" href="css/style.css?v=9.1">
 
   <!-- External Libraries & Synthesizer -->
   <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
   <script src="https://unpkg.com/mqtt@5.3.5/dist/mqtt.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
-  <script src="js/p5-audio.js?v=8.0"></script>
+  <script src="js/p5-audio.js?v=9.1"></script>
 </head>
 <body>
   <!-- All-Out Attack Full-Screen Wipe Overlay -->
@@ -300,22 +300,16 @@
           <div class="form-group">
             <label for="wsRoomCodeInput">SHARED SYNC ROOM CODE</label>
             <div style="display: flex; gap: 8px;">
-              <input type="text" id="wsRoomCodeInput" value="PHANTOM-THIEVES" placeholder="e.g. PHANTOM-THIEVES" style="text-transform: uppercase; font-weight: 700; letter-spacing: 1px; flex: 1;">
+              <input type="text" id="wsRoomCodeInput" placeholder="Press 🎲 to create a private room" style="text-transform: uppercase; font-weight: 700; letter-spacing: 1px; flex: 1;">
               <button type="button" class="btn-primary" id="btnUpdateRoomCode" style="font-size: 0.85rem; padding: 8px 14px;">JOIN ROOM</button>
               <button type="button" class="btn-secondary" id="btnRandomRoomCode" title="Generate Random Room Code" style="padding: 8px 12px;">🎲</button>
             </div>
             <span style="font-size: 0.78rem; color: #a1a1aa;">
-              Devices in the same room code share their mission board automatically.
+              Devices with the same room code share their board, end-to-end encrypted. Treat the code like a password.
             </span>
           </div>
 
-          <!-- Instant Phone Pairing QR Code -->
-          <div class="sync-code-display" style="margin-top: 12px; padding: 14px; background: rgba(0,0,0,0.6); border: 2px solid #3f3f46; text-align: center;">
-            <span style="font-size: 0.85rem; color: #fff; font-weight: 700; letter-spacing: 1px;">📱 SCAN TO PAIR YOUR PHONE LIVE</span>
-            <div class="qr-placeholder" id="wsQrContainer" style="margin: 10px auto; background: #ffffff; padding: 8px; border: 3px solid var(--p5-red); width: 156px; height: 156px; display: flex; align-items: center; justify-content: center;" title="Scan with phone camera to sync live">
-              <img id="wsQrCodeImg" src="" alt="WebSocket Pairing QR Code" style="display: none; width: 140px; height: 140px;">
-              <span id="wsQrLoading" style="font-size: 0.8rem; color: #000; font-weight: 700;">Generating QR...</span>
-            </div>
+          <div style="margin-top: 12px;">
             <button type="button" class="btn-secondary" id="btnCopyWsRoomLink" style="font-size: 0.85rem; padding: 6px 14px;">📋 COPY PAIRING LINK</button>
           </div>
 
@@ -350,14 +344,14 @@
           </p>
           <div class="form-group" style="margin-top: 6px;">
             <label for="githubTokenInput">GITHUB ACCESS TOKEN</label>
-            <input type="password" id="githubTokenInput" value="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" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx">
+            <input type="password" id="githubTokenInput" autocomplete="off" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx">
             <span style="font-size: 0.8rem; color: #71717a;">
-              Connected to GitHub user <code>tjsilva257</code>. (Private & Secure).
+              Your own token with only the <code>gist</code> permission. It is saved on this device only.
             </span>
           </div>
           <div class="form-group">
             <label for="githubGistIdInput">SYNC GIST ID</label>
-            <input type="text" id="githubGistIdInput" value="85e8ded56ce90d2814cde739829d031f" placeholder="Gist ID">
+            <input type="text" id="githubGistIdInput" placeholder="Leave empty on your first device, then copy the ID to the others">
           </div>
           <div style="display: flex; gap: 12px; margin-top: 10px;">
             <button class="btn-primary" id="btnRunCloudSync">☁️ SYNC NOW (24/7)</button>
@@ -368,22 +362,18 @@
         <!-- Tab 1: P2P Instant Sync (WebRTC) -->
         <div class="sync-tab-content" id="tabContentP2p">
           <p style="font-size: 0.95rem; color: #a1a1aa; line-height: 1.5;">
-            Direct peer-to-peer connection! Connect your phone and PC instantly by scanning the QR code.
+            Direct peer-to-peer connection! Type the code from one device into the other; the other device asks before it accepts.
           </p>
           <div class="sync-code-display">
             <span style="font-size: 0.85rem; color: #a1a1aa;">YOUR NAVIGATOR CODE</span>
             <div class="sync-code-text" id="mySyncCodeDisplay">GENERATING...</div>
             <button class="btn-secondary" style="font-size: 0.85rem; padding: 6px 14px;" id="btnCopySyncCode">📋 COPY CODE</button>
-            <div class="qr-placeholder" id="qrContainer" title="Scan with your phone to sync">
-              <img id="qrCodeImg" src="" alt="Sync QR Code" style="display: none;">
-              <span id="qrLoading" style="font-size: 0.8rem; color: #475569;">QR Loading...</span>
-            </div>
           </div>
 
           <div class="form-group" style="margin-top: 10px;">
             <label for="remoteSyncCodeInput">CONNECT TO ANOTHER PHANTOM</label>
             <div style="display: flex; gap: 10px;">
-              <input type="text" id="remoteSyncCodeInput" placeholder="Enter code (e.g. st-a1b2)" style="flex: 1;">
+              <input type="text" id="remoteSyncCodeInput" placeholder="Enter the other device's code" style="flex: 1;">
               <button class="btn-primary" id="btnConnectP2P">CONNECT</button>
             </div>
           </div>
@@ -432,15 +422,15 @@
   <div class="toast-container" id="toastContainer" aria-live="polite"></div>
 
   <!-- Scripts with Cache Buster -->
-  <script src="js/storage.js?v=8.0"></script>
-  <script src="js/sync.js?v=8.0"></script>
-  <script src="js/app.js?v=8.0"></script>
+  <script src="js/storage.js?v=9.1"></script>
+  <script src="js/sync.js?v=9.1"></script>
+  <script src="js/app.js?v=9.1"></script>
 
   <!-- Service Worker -->
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js?v=8.0').catch((err) => {
+        navigator.serviceWorker.register('./sw.js?v=9.1').catch((err) => {
           console.log('SW registration skipped:', err);
         });
       });
