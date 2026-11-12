@@ -434,6 +434,17 @@ document.addEventListener('DOMContentLoaded', async () => {
       const allTasks = await window.storageEngine.getAllTasks(false);
       const task = allTasks.find(t => t.id === taskId);
       if (task) {
+        // A to-do that came from a message: ticking it lets Claude tell the sender it is done, so ask first.
+        // Only this yes sets replyApproved; without it no message is ever sent.
+        if (actionBtn.checked && task.source && !task.repliedAt) {
+          if (!confirm(`Are you sure this is done?\n\n"${task.title}"\n\nOK = mark it done and send the person who asked a message that it is finished.\nCancel = leave it open, nothing is sent.`)) {
+            actionBtn.checked = false;
+            return;
+          }
+          task.replyApproved = true;
+        } else if (!actionBtn.checked) {
+          task.replyApproved = false;
+        }
         task.completed = actionBtn.checked;
         task.completedAt = task.completed ? Date.now() : null;
         task.updatedAt = Date.now();

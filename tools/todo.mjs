@@ -19,7 +19,7 @@ const USAGE = `Usage:
   node tools/todo.mjs add "Title" [--cat Work] [--prio low|medium|high] [--due YYYY-MM-DD] [--notes "..."] [--source https://...] [--done]
   node tools/todo.mjs edit "<id or part of title>" [--notes "..."] [--source https://...]
   node tools/todo.mjs done "<id or part of title>"
-  node tools/todo.mjs replies                   completed tasks that came from a message and were not answered yet
+  node tools/todo.mjs replies                   completed tasks from a message that the user confirmed in the app and that were not answered yet
   node tools/todo.mjs replied "<id>"            mark that the sender was told it is done
   node tools/todo.mjs summaries                 days that have a written summary
   node tools/todo.mjs summary YYYY-MM-DD "Text"  store the written summary for a day
@@ -67,8 +67,9 @@ export function touchedToday(tasks, now = Date.now()) {
   return tasks.filter(t => !t.deletedAt && (on(t.createdAt) || (t.completed && on(t.completedAt || t.updatedAt))));
 }
 
-// Completed tasks that came from a message whose sender has not been told yet
-export const awaitingReply = tasks => tasks.filter(t => !t.deletedAt && t.completed && t.source && !t.repliedAt);
+// Completed tasks that came from a message whose sender has not been told yet.
+// replyApproved is set only by the app, when the user answers yes to "are you sure this is done?"
+export const awaitingReply = tasks => tasks.filter(t => !t.deletedAt && t.completed && t.source && t.replyApproved && !t.repliedAt);
 
 // Summaries live next to the tasks: { 'YYYY-MM-DD': { text, updatedAt, pasted } }
 export function setSummary(summaries, date, text, now = Date.now()) {
@@ -153,7 +154,8 @@ function selftest() {
   assert.deepEqual(touchedToday([a, b], now - 2 * 86400000), [b]); // a past day does not include later work
   assert.equal(makeTask({ title: 'x', notes: 'one\\ntwo' }).notes, 'one\ntwo');
   assert.throws(() => makeTask({ title: 'x', source: 'javascript:alert(1)' }), /https/);
-  const fromSlack = makeTask({ title: 'Asked', source: 'https://x.slack.com/archives/C1/p1', done: true }, now);
+  const fromSlack = { ...makeTask({ title: 'Asked', source: 'https://x.slack.com/archives/C1/p1', done: true }, now), replyApproved: true };
+  assert.deepEqual(awaitingReply([{ ...fromSlack, replyApproved: false }, { ...fromSlack, replyApproved: undefined }]), []); // no yes from the user, no message
   assert.deepEqual(awaitingReply([a, fromSlack, { ...fromSlack, repliedAt: now }, { ...fromSlack, completed: false }]), [fromSlack]);
   const sums = {};
   assert.equal(setSummary(sums, '2026-11-12', ' Did A.\\nDid B. ', now).text, 'Did A.\nDid B.');
@@ -206,7 +208,7 @@ async function main() {
     console.log(awaitingReply(data.tasks).map(show).join('\n') || 'Nobody is waiting for an answer.');
   } else if (cmd === 'replied') {
     const task = awaitingReply(data.tasks).find(t => t.id === arg);
-    if (!task) throw new Error(`No completed, unanswered task with a source has id ${arg}; see "replies"`);
+    if (!task) throw new Error(`No confirmed, unanswered task has id ${arg}; see "replies"`);
     task.updatedAt = task.repliedAt = Date.now();
     await writeData(cfg, data);
     console.log('Marked as answered: ' + task.title);

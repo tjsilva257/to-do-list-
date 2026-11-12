@@ -34,7 +34,7 @@ If the tool says `~/.synctask.json` is missing, tell the user what it asks for a
 
 When the user asks to answer the people whose to-dos are finished (or as part of the daily summary):
 
-1. `TODO replies` lists completed to-dos that came from a message (`source`) and were not answered yet.
+1. `TODO replies` lists completed to-dos that came from a message (`source`), that the user confirmed in the app ("are you sure this is done?" → yes) and that were not answered yet. A to-do that is not in this list gets no message; never complete or approve one yourself to make it appear.
 2. For each one, open the thread behind the source link. If the user already said there that it is done, only run `TODO replied "<task id>"`.
 3. Otherwise write a one- or two-sentence reply in the language of the original message and show it to the user. Create it as a draft in that thread, or send it only after the user says yes to that specific text.
 4. Then run `TODO replied "<task id>"`.
