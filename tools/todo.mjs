@@ -90,7 +90,7 @@ async function writeData(cfg, data) {
   await gist(cfg, 'PATCH', { files: { [FILE]: { content: JSON.stringify(data, null, 2) } } });
 }
 
-const show = t => `${t.completed ? '[x]' : '[ ]'} ${t.title}  (${t.category || '-'}, ${t.priority}${t.dueDate ? ', due ' + t.dueDate : ''})  ${t.id}`;
+const show = t => `${t.completed ? '[x]' : '[ ]'} ${t.title}  (${t.category || '-'}, ${t.priority}${t.dueDate ? ', due ' + t.dueDate : ''})  ${t.id}${t.notes ? '\n      ' + t.notes : ''}`;
 
 function selftest() {
   const now = new Date('2026-11-12T10:00:00').getTime();

@@ -229,3 +229,7 @@ api/data/
 *.sqlite
 *.db
 
+
+# Local Claude/Slack connection config and to-do tool credentials: never publish
+.mcp.json
+.synctask.json
