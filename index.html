@@ -16,13 +16,13 @@
   <link rel="alternate icon" type="image/png" href="assets/icon.png">
 
   <!-- Stylesheet with Cache Buster -->
-  <link rel="stylesheet" href="css/style.css?v=9.5">
+  <link rel="stylesheet" href="css/style.css?v=9.6">
 
   <!-- External Libraries & Synthesizer -->
   <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
   <script src="https://unpkg.com/mqtt@5.3.5/dist/mqtt.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
-  <script src="js/p5-audio.js?v=9.5"></script>
+  <script src="js/p5-audio.js?v=9.6"></script>
 </head>
 <body>
   <!-- All-Out Attack Full-Screen Wipe Overlay -->
@@ -162,6 +162,7 @@
 
         <div class="header-actions">
           <div class="top-tagline">★ TAKE YOUR TIME ★</div>
+          <button class="btn-secondary" id="btnDaySummary" title="Summary of one day, ready to paste">📝 DAY SUMMARY</button>
           <button class="btn-install" id="btnInstallPwa" title="Install App">
             <span>📱</span> INSTALL APP
           </button>
@@ -263,6 +264,29 @@
           </div>
         </div>
       </form>
+    </div>
+  </dialog>
+
+  <!-- Day Summary Modal (<dialog>) -->
+  <dialog id="summaryModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title">DAY SUMMARY</h3>
+        <button class="modal-close-btn" id="btnCloseSummary" aria-label="Close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="summaryDate">DAY</label>
+          <input type="date" id="summaryDate">
+        </div>
+        <div class="form-group">
+          <label for="summaryText">SUMMARY (EDIT IF YOU LIKE, THEN COPY)</label>
+          <textarea id="summaryText" rows="9"></textarea>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-primary" id="btnCopySummary">📋 COPY</button>
+        </div>
+      </div>
     </div>
   </dialog>
 
@@ -422,15 +446,15 @@
   <div class="toast-container" id="toastContainer" aria-live="polite"></div>
 
   <!-- Scripts with Cache Buster -->
-  <script src="js/storage.js?v=9.5"></script>
-  <script src="js/sync.js?v=9.5"></script>
-  <script src="js/app.js?v=9.5"></script>
+  <script src="js/storage.js?v=9.6"></script>
+  <script src="js/sync.js?v=9.6"></script>
+  <script src="js/app.js?v=9.6"></script>
 
   <!-- Service Worker -->
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js?v=9.5').catch((err) => {
+        navigator.serviceWorker.register('./sw.js?v=9.6').catch((err) => {
           console.log('SW registration skipped:', err);
         });
       });

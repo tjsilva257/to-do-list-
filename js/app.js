@@ -2,6 +2,21 @@
  * SyncTask - Main Application Logic
  */
 
+// Plain-text summary of one day (dateStr = YYYY-MM-DD, local time) for pasting into a school or work log.
+// Written in Dutch; change the four strings below for another language.
+function buildDaySummary(tasks, dateStr) {
+  const dayOf = ts => (ts ? new Date(ts).toLocaleDateString('sv') : ''); // 'sv' formats as YYYY-MM-DD
+  const live = tasks.filter(t => !t.deletedAt);
+  // completedAt is missing on tasks completed by older versions: fall back to the last change
+  const done = live.filter(t => t.completed && dayOf(t.completedAt || t.updatedAt) === dateStr);
+  const busy = live.filter(t => !t.completed && (dayOf(t.createdAt) === dateStr || dayOf(t.updatedAt) === dateStr));
+  if (!done.length && !busy.length) return 'Geen taken gevonden voor deze dag.';
+
+  const heading = new Date(dateStr + 'T12:00').toLocaleDateString('nl-NL', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  const list = (label, items) => (items.length ? '\n\n' + label + '\n' + items.map(t => '- ' + t.title).join('\n') : '');
+  return heading.charAt(0).toUpperCase() + heading.slice(1) + list('Afgerond:', done) + list('Aan gewerkt:', busy);
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
   // --- DOM Element References ---
   const tasksContainer = document.getElementById('tasksContainer');
@@ -890,6 +905,26 @@ document.addEventListener('DOMContentLoaded', async () => {
       showToast('Failed to parse backup file', 'error');
     }
     e.target.value = '';
+  });
+
+  // --- Day Summary ---
+  const summaryModal = document.getElementById('summaryModal');
+  const summaryDate = document.getElementById('summaryDate');
+  const summaryText = document.getElementById('summaryText');
+
+  async function refreshSummary() {
+    summaryText.value = buildDaySummary(await window.storageEngine.getAllTasks(), summaryDate.value);
+  }
+
+  document.getElementById('btnDaySummary').addEventListener('click', async () => {
+    summaryDate.value = new Date().toLocaleDateString('sv');
+    await refreshSummary();
+    summaryModal.showModal();
+  });
+  summaryDate.addEventListener('change', refreshSummary);
+  document.getElementById('btnCloseSummary').addEventListener('click', () => summaryModal.close());
+  document.getElementById('btnCopySummary').addEventListener('click', () => {
+    navigator.clipboard.writeText(summaryText.value).then(() => showToast('Summary copied!', 'success'));
   });
 
   // --- Keyboard Shortcuts ---
