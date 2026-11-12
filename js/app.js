@@ -336,6 +336,15 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (task.priority === 'high') priorityLabel = 'ALERT: 99% RULER';
       if (task.priority === 'low') priorityLabel = 'ALERT: 0% MINOR';
 
+      const [noteHead, ...noteRest] = (task.notes || '').split('\n');
+      const noteBody = noteRest.join('\n').trim();
+      const notesHtml = !task.notes ? '' : noteBody
+        ? `<details class="task-notes-snippet"><summary>${escapeHtml(noteHead)}</summary>${escapeHtml(noteBody)}</details>`
+        : `<div class="task-notes-snippet">${escapeHtml(task.notes)}</div>`;
+      // source comes from other devices: only a plain https link may become clickable
+      const sourceHtml = /^https:\/\/\S+$/.test(task.source || '')
+        ? `<a class="badge badge-source" href="${escapeHtml(task.source)}" target="_blank" rel="noopener noreferrer">OPEN MESSAGE</a>` : '';
+
       return `
         <article class="task-card ${task.completed ? 'completed' : ''}" data-id="${escapeHtml(task.id)}">
           <label class="task-checkbox-container" title="${task.completed ? 'Mark incomplete' : 'Change Heart (Complete)'}">
@@ -355,9 +364,10 @@ document.addEventListener('DOMContentLoaded', async () => {
               <span class="badge badge-priority-${['low', 'medium', 'high'].includes(task.priority) ? task.priority : 'medium'}">${priorityLabel}</span>
               ${task.category ? `<span class="badge badge-category">[${escapeHtml(task.category).toUpperCase()}]</span>` : ''}
               ${task.dueDate ? `<span class="badge badge-date ${dateBadgeClass}">${escapeHtml(dateBadgeText)}</span>` : ''}
+              ${sourceHtml}
             </div>
 
-            ${task.notes ? `<div class="task-notes-snippet">${escapeHtml(task.notes)}</div>` : ''}
+            ${notesHtml}
           </div>
         </article>
       `;
@@ -811,6 +821,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (data.total === 0) {
         syncText.textContent = 'P2P READY';
       }
+    } else if (event === 'summaries_synced') {
+      refreshSummary(summaryModal.open);
     } else if (event === 'tasks_synced') {
       showToast(`Synchronized ${data.count} target(s)!`, 'sync');
       renderTasks();
@@ -911,12 +923,55 @@ document.addEventListener('DOMContentLoaded', async () => {
   const summaryModal = document.getElementById('summaryModal');
   const summaryDate = document.getElementById('summaryDate');
   const summaryText = document.getElementById('summaryText');
+  const summaryHint = document.getElementById('summaryHint');
+  const summaryDays = document.getElementById('summaryDays');
+  const btnDaySummary = document.getElementById('btnDaySummary');
 
-  async function refreshSummary() {
-    summaryText.value = buildDaySummary(await window.storageEngine.getAllTasks(), summaryDate.value);
+  // Shows Claude's written summary for the chosen day (or a plain list when there is none),
+  // the days that have one, and how many are still waiting to be pasted.
+  // keepText: leave the text box alone, so edits survive a tick or a background sync
+  async function refreshSummary(keepText = false) {
+    const summaries = await window.storageEngine.getSummaries();
+    if (!keepText) {
+      const written = summaries[summaryDate.value];
+      summaryText.value = written ? written.text : buildDaySummary(await window.storageEngine.getAllTasks(), summaryDate.value);
+      summaryHint.textContent = written ? 'Written by Claude.' : 'Claude has not written this day yet. This is a plain list of your to-dos.';
+    }
+
+    const days = Object.keys(summaries).sort().reverse();
+    // every day still to paste, plus the last few done ones
+    const shown = days.filter(day => !summaries[day].pasted).concat(days.filter(day => summaries[day].pasted).slice(0, 7)).sort().reverse();
+    summaryDays.innerHTML = shown.map(day => {
+      const label = new Date(day + 'T12:00').toLocaleDateString('nl-NL', { weekday: 'short', day: 'numeric', month: 'short' });
+      return `<div class="summary-day${summaries[day].pasted ? ' pasted' : ''}${day === summaryDate.value ? ' selected' : ''}">
+        <input type="checkbox" data-day="${escapeHtml(day)}" aria-label="Pasted ${escapeHtml(label)}" ${summaries[day].pasted ? 'checked' : ''}>
+        <button type="button" data-day="${escapeHtml(day)}">${escapeHtml(label)}</button>
+      </div>`;
+    }).join('') || '<span style="font-size: 0.85rem; color: #a1a1aa;">No written summaries yet.</span>';
+
+    const waiting = days.filter(day => !summaries[day].pasted).length;
+    btnDaySummary.textContent = '📝 DAY SUMMARY' + (waiting ? ` (${waiting})` : '');
   }
 
-  document.getElementById('btnDaySummary').addEventListener('click', async () => {
+  summaryDays.addEventListener('click', (e) => {
+    if (e.target.tagName !== 'BUTTON') return;
+    summaryDate.value = e.target.dataset.day;
+    refreshSummary();
+  });
+
+  summaryDays.addEventListener('change', async (e) => {
+    const summaries = await window.storageEngine.getSummaries();
+    const entry = summaries[e.target.dataset.day];
+    if (!entry) return;
+    entry.pasted = e.target.checked;
+    // must be newer than the stored one for every device to accept the tick, even if this device's clock runs behind
+    entry.updatedAt = Math.max(Date.now(), (entry.updatedAt || 0) + 1);
+    await window.storageEngine.setSetting('summaries', summaries);
+    window.syncEngine.queueCloudSync();
+    refreshSummary(true);
+  });
+
+  btnDaySummary.addEventListener('click', async () => {
     summaryDate.value = new Date().toLocaleDateString('sv');
     await refreshSummary();
     summaryModal.showModal();
@@ -937,6 +992,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // --- Initial Launch ---
   await renderTasks();
+  summaryDate.value = new Date().toLocaleDateString('sv');
+  refreshSummary(); // shows the waiting count on the button
 
   // Launch Live WebSocket Sync (Cloud or Local)
   window.syncEngine.connectWebSocket().then(() => updateWsStatusDisplay()).catch(err => showToast(err.message, 'error'));

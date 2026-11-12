@@ -215,6 +215,26 @@ class StorageEngine {
     return value;
   }
 
+  // --- Day summaries written by Claude: { 'YYYY-MM-DD': { text, updatedAt, pasted } } ---
+
+  async getSummaries() {
+    return await this.getSetting('summaries', {});
+  }
+
+  // Newest change per day wins, the same rule as for tasks. Returns how many days changed.
+  async mergeSummaries(incoming) {
+    const mine = await this.getSummaries();
+    let changed = 0;
+    for (const [day, s] of Object.entries(incoming || {})) {
+      if (/^\d{4}-\d{2}-\d{2}$/.test(day) && s && typeof s.text === 'string' && (s.updatedAt || 0) > ((mine[day] || {}).updatedAt || 0)) {
+        mine[day] = { text: s.text, updatedAt: s.updatedAt, pasted: !!s.pasted };
+        changed++;
+      }
+    }
+    if (changed) await this.setSetting('summaries', mine);
+    return changed;
+  }
+
   // --- Batch Import & Merge for Sync ---
 
   async mergeTasks(incomingTasks) {

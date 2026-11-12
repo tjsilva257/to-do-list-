@@ -224,7 +224,11 @@ class SyncEngine {
       }
     }
 
-    // Auto-sync to GitHub Cloud (24/7) with debounce if enabled
+    this.queueCloudSync();
+  }
+
+  // Auto-sync to GitHub Cloud (24/7) with debounce if enabled
+  queueCloudSync() {
     if (this.cloudSyncDebounceTimer) clearTimeout(this.cloudSyncDebounceTimer);
     this.cloudSyncDebounceTimer = setTimeout(async () => {
       const enabled = await this.storage.getSetting('cloudSyncEnabled', false);
@@ -289,6 +293,7 @@ class SyncEngine {
     const explicit = token !== null; // only the SYNC NOW button may create a gist
     let pulled = 0;
     let remoteTasks = null;
+    let remoteSummaries = {};
 
     try {
       this._notify('sync_start', { target: 'github' });
@@ -314,6 +319,8 @@ class SyncEngine {
                 remoteTasks = remoteParsed.tasks;
                 pulled = (await this.storage.mergeTasks(remoteTasks)).updated;
               }
+              remoteSummaries = remoteParsed.summaries || {};
+              if (await this.storage.mergeSummaries(remoteSummaries)) this._notify('summaries_synced', {});
               if (remoteParsed.categories && Array.isArray(remoteParsed.categories)) {
                 await this.storage.saveCategories(remoteParsed.categories);
               }
@@ -331,15 +338,19 @@ class SyncEngine {
 
       // Now prepare current merged data to push to GitHub Gist
       const allCurrentTasks = await this.storage.getAllTasks(true);
+      const summaries = await this.storage.getSummaries();
       const payloadString = JSON.stringify({
         version: 1,
         updatedAt: Date.now(),
         tasks: allCurrentTasks,
-        categories: categories
+        categories: categories,
+        summaries: summaries
       }, null, 2);
 
       const byId = list => JSON.stringify([...list].sort((a, b) => (a.id < b.id ? -1 : 1)));
-      const unchanged = remoteTasks && byId(remoteTasks) === byId(allCurrentTasks);
+      // tolerant of a damaged entry: it then just counts as different and the clean local copy is pushed
+      const byDay = obj => JSON.stringify(Object.keys(obj || {}).sort().map(day => { const e = obj[day] || {}; return [day, e.text, e.updatedAt, !!e.pasted]; }));
+      const unchanged = remoteTasks && byId(remoteTasks) === byId(allCurrentTasks) && byDay(remoteSummaries) === byDay(summaries);
 
       if (!ghGistId) {
         if (!explicit) throw new Error('Cloud sync is not set up on this device. Open Sync, 24/7 Cloud Gist.');

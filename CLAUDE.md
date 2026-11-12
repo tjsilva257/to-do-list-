@@ -20,7 +20,8 @@ Static PWA, no build step. Published to GitHub Pages from `main` (the whole repo
 - **Data from other devices is untrusted.** Escape it with `escapeHtml` or set `textContent`; never put it in `innerHTML` raw.
 - **No third-party request may carry task data or pairing codes** (this is why the QR-code service was removed).
 - **After changing any file the page loads**, raise `CACHE_NAME` in `sw.js` and the `?v=` numbers in `index.html` together, or installed apps keep the old files.
-- Task shape (keep the tool and the app identical): `id, title, priority (low|medium|high), category (Work|Personal|Shopping|Study), dueDate (YYYY-MM-DD or null), notes, completed, completedAt, subtasks, tags, createdAt, updatedAt, deletedAt?`.
+- Task shape (keep the tool and the app identical): `id, title, priority (low|medium|high), category (Work|Personal|Shopping|Study), dueDate (YYYY-MM-DD or null), notes, completed, completedAt, subtasks, tags, createdAt, updatedAt, deletedAt?, source? (https link to the message it came from), repliedAt?`. The first line of `notes` is shown as the summary; the rest opens as the explanation.
+- The gist file also holds `summaries: { "YYYY-MM-DD": { text, updatedAt, pasted } }`, the day summaries Claude writes. Anything that rewrites the gist must keep keys it does not know.
 
 ## Checking a change
 

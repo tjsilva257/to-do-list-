@@ -972,6 +972,18 @@ button {
   box-shadow: 2px 2px 0px #000000;
 }
 
+.badge-source {
+  background: #000000;
+  color: var(--p5-yellow);
+  border: 1px solid var(--p5-yellow);
+  text-decoration: none;
+}
+
+.badge-source:hover {
+  background: var(--p5-yellow);
+  color: #000000;
+}
+
 .badge-date {
   background: #282830;
   color: #ffffff;
@@ -996,6 +1008,54 @@ button {
   padding: 6px 12px;
   border-left: 3px solid var(--p5-yellow);
   white-space: pre-line;
+}
+
+details.task-notes-snippet summary {
+  cursor: pointer;
+  color: #ffffff;
+  font-weight: 700;
+}
+
+details.task-notes-snippet[open] summary {
+  margin-bottom: 6px;
+}
+
+/* Day summary: one chip per written day, tick = pasted */
+.summary-days {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.summary-day {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  background: #000000;
+  border: 2px solid var(--p5-yellow);
+}
+
+.summary-day button {
+  font-family: var(--p5-font-sub);
+  font-weight: 700;
+  font-size: 0.85rem;
+  letter-spacing: 0;
+  color: var(--p5-yellow);
+}
+
+.summary-day.pasted {
+  border-color: #3f3f46;
+}
+
+.summary-day.pasted button {
+  color: #71717a;
+  text-decoration: line-through;
+}
+
+.summary-day.selected {
+  background: #2a0a0d;
+  border-color: var(--p5-red);
 }
 
 .task-actions {
