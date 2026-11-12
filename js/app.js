@@ -733,7 +733,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (code) {
         mySyncCodeDisplay.textContent = code.toUpperCase();
         syncDot.className = 'sync-dot online';
-        syncText.textContent = `P2P Ready: ${code.toUpperCase()}`;
+        syncText.textContent = 'P2P READY'; // the code is long; it is shown in the Sync window
 
       } else {
         mySyncCodeDisplay.textContent = 'P2P Offline';
@@ -794,7 +794,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     } else if (event === 'device_disconnected') {
       connectedPeersList.textContent = data.total > 0 ? `🟢 ${data.total} connected device(s)` : '';
       if (data.total === 0) {
-        syncText.textContent = `P2P Ready: ${window.syncEngine.peerId.toUpperCase()}`;
+        syncText.textContent = 'P2P READY';
       }
     } else if (event === 'tasks_synced') {
       showToast(`Synchronized ${data.count} target(s)!`, 'sync');

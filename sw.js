@@ -1,4 +1,4 @@
-const CACHE_NAME = 'synctask-persona-v10';
+const CACHE_NAME = 'synctask-persona-v14';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',

@@ -16,13 +16,13 @@
   <link rel="alternate icon" type="image/png" href="assets/icon.png">
 
   <!-- Stylesheet with Cache Buster -->
-  <link rel="stylesheet" href="css/style.css?v=9.1">
+  <link rel="stylesheet" href="css/style.css?v=9.5">
 
   <!-- External Libraries & Synthesizer -->
   <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
   <script src="https://unpkg.com/mqtt@5.3.5/dist/mqtt.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
-  <script src="js/p5-audio.js?v=9.1"></script>
+  <script src="js/p5-audio.js?v=9.5"></script>
 </head>
 <body>
   <!-- All-Out Attack Full-Screen Wipe Overlay -->
@@ -422,15 +422,15 @@
   <div class="toast-container" id="toastContainer" aria-live="polite"></div>
 
   <!-- Scripts with Cache Buster -->
-  <script src="js/storage.js?v=9.1"></script>
-  <script src="js/sync.js?v=9.1"></script>
-  <script src="js/app.js?v=9.1"></script>
+  <script src="js/storage.js?v=9.5"></script>
+  <script src="js/sync.js?v=9.5"></script>
+  <script src="js/app.js?v=9.5"></script>
 
   <!-- Service Worker -->
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js?v=9.1').catch((err) => {
+        navigator.serviceWorker.register('./sw.js?v=9.5').catch((err) => {
           console.log('SW registration skipped:', err);
         });
       });

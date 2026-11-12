@@ -150,7 +150,7 @@ button {
    SIDEBAR (Original Full-Height Left Column)
    ========================================================================== */
 .sidebar {
-  width: 320px;
+  width: 380px;
   background: rgba(13, 13, 17, 0.96);
   border-right: 3px solid var(--p5-red);
   display: flex;
@@ -194,8 +194,8 @@ button {
 
 .brand-name {
   font-family: var(--p5-font);
-  font-size: 2.1rem;
-  letter-spacing: 2px;
+  font-size: 1.7rem; /* sized so logo + name + badge fit inside the sidebar */
+  letter-spacing: 1px;
   color: #ffffff;
   text-shadow: 3px 3px 0px var(--p5-red), 4px 4px 0px #000000;
 }
@@ -234,6 +234,8 @@ button {
 }
 
 .sync-indicator {
+  min-width: 0;
+  overflow-wrap: anywhere;
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -366,7 +368,8 @@ button {
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
-  padding-right: 4px;
+  /* room for the slanted edges, shadows and the 8px slide of the selected item, which this box would otherwise clip */
+  padding: 0 16px 6px 8px;
   scrollbar-width: none;
   -ms-overflow-style: none;
 }
@@ -520,8 +523,6 @@ button {
   display: flex;
   flex-direction: column;
   padding: 28px 40px 80px 40px;
-  max-width: 1200px;
-  margin: 0 auto;
   width: 100%;
   gap: 24px;
   position: relative;
@@ -741,7 +742,7 @@ button {
   display: flex;
   align-items: center;
   gap: 10px;
-  overflow-x: auto;
+  flex-wrap: wrap; /* every tab stays visible instead of scrolling out of view */
   padding-bottom: 6px;
   scrollbar-width: none;
   -ms-overflow-style: none;
@@ -1099,7 +1100,7 @@ button {
 dialog {
   border: none;
   background: transparent;
-  padding: 0;
+  padding: 10px 16px 16px; /* room for the slanted header and the drop shadows, which the dialog box clips */
   margin: auto;
   max-width: 640px;
   width: 90%;
@@ -1164,10 +1165,7 @@ dialog::backdrop {
   border: 3px solid #000000;
   border-top: none;
   border-bottom: 2px solid var(--p5-red);
-  transform: skewX(-6deg);
-  overflow-x: auto;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
+  flex-wrap: wrap; /* all tabs visible; they used to scroll out of reach */
 }
 
 .sync-tabs::-webkit-scrollbar {
@@ -1180,9 +1178,9 @@ dialog::backdrop {
   background: #141418;
   border: 1px solid rgba(255, 255, 255, 0.3);
   color: #aaaaaa;
-  padding: 6px 12px;
+  padding: 5px 10px;
   font-family: var(--p5-font);
-  font-size: 1.15rem;
+  font-size: 0.95rem;
   letter-spacing: 1px;
   white-space: nowrap;
   cursor: pointer;
@@ -1207,7 +1205,7 @@ dialog::backdrop {
   display: flex;
   flex-direction: column;
   gap: 16px;
-  transform: skewX(-6deg);
+  /* not slanted: a tall slanted box leans far sideways and no longer lines up with the header */
   box-shadow: 6px 6px 0px #000000;
 }
 
@@ -1275,9 +1273,11 @@ dialog::backdrop {
 
 .sync-code-text {
   font-family: var(--p5-font);
-  font-size: 2.2rem;
+  font-size: 1.3rem; /* pairing codes are 23 characters now */
   color: var(--p5-yellow);
-  letter-spacing: 3px;
+  letter-spacing: 2px;
+  overflow-wrap: anywhere;
+  max-width: 100%;
 }
 
 .qr-placeholder {
