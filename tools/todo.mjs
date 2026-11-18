@@ -12,15 +12,13 @@ const FLAGS = { all: false, done: false, cat: true, prio: true, due: true, notes
 // A day that exists: 2026-02-30 parses as 2 March, so compare the round trip
 export const isDay = d => /^\d{4}-\d{2}-\d{2}$/.test(d || '') && !isNaN(new Date(d + 'T00:00Z')) && new Date(d + 'T00:00Z').toISOString().slice(0, 10) === d;
 // How many words each command takes (command included); more means a quote went missing and text would be cut off
-const WORDS = { list: 1, today: 2, add: 2, edit: 2, done: 2, replies: 1, replied: 2, summaries: 1, summary: 3, selftest: 1 };
+const WORDS = { list: 1, today: 2, add: 2, edit: 2, done: 2, summaries: 1, summary: 3, selftest: 1 };
 const USAGE = `Usage:
   node tools/todo.mjs list [--all]              open tasks (--all: also completed)
   node tools/todo.mjs today [YYYY-MM-DD]        tasks created or completed on that day (default today)
   node tools/todo.mjs add "Title" [--cat Work] [--prio low|medium|high] [--due YYYY-MM-DD] [--notes "..."] [--source https://...] [--done]
   node tools/todo.mjs edit "<id or part of title>" [--notes "..."] [--source https://...]
   node tools/todo.mjs done "<id or part of title>"
-  node tools/todo.mjs replies                   completed tasks from a message that the user confirmed in the app and that were not answered yet
-  node tools/todo.mjs replied "<id>"            mark that the sender was told it is done
   node tools/todo.mjs summaries                 days that have a written summary
   node tools/todo.mjs summary YYYY-MM-DD "Text"  store the written summary for a day
   In --notes and summary text, write \\n for a line break.
@@ -66,10 +64,6 @@ export function touchedToday(tasks, now = Date.now()) {
   // completedAt is missing on tasks completed by older app versions: fall back to the last change
   return tasks.filter(t => !t.deletedAt && (on(t.createdAt) || (t.completed && on(t.completedAt || t.updatedAt))));
 }
-
-// Completed tasks that came from a message whose sender has not been told yet.
-// replyApproved is set only by the app, when the user answers yes to "are you sure this is done?"
-export const awaitingReply = tasks => tasks.filter(t => !t.deletedAt && t.completed && t.source && t.replyApproved && !t.repliedAt);
 
 // Summaries live next to the tasks: { 'YYYY-MM-DD': { text, updatedAt, pasted } }
 export function setSummary(summaries, date, text, now = Date.now()) {
@@ -126,7 +120,7 @@ async function writeData(cfg, data) {
 }
 
 const show = t => `${t.completed ? '[x]' : '[ ]'} ${t.title}  (${t.category || '-'}, ${t.priority}${t.dueDate ? ', due ' + t.dueDate : ''})  ${t.id}`
-  + (t.source ? `\n      source: ${t.source}${t.repliedAt ? ' (answered)' : ''}` : '')
+  + (t.source ? `\n      source: ${t.source}` : '')
   + (t.notes ? '\n      ' + t.notes.replaceAll('\n', '\n      ') : '');
 
 function selftest() {
@@ -154,9 +148,6 @@ function selftest() {
   assert.deepEqual(touchedToday([a, b], now - 2 * 86400000), [b]); // a past day does not include later work
   assert.equal(makeTask({ title: 'x', notes: 'one\\ntwo' }).notes, 'one\ntwo');
   assert.throws(() => makeTask({ title: 'x', source: 'javascript:alert(1)' }), /https/);
-  const fromSlack = { ...makeTask({ title: 'Asked', source: 'https://x.slack.com/archives/C1/p1', done: true }, now), replyApproved: true };
-  assert.deepEqual(awaitingReply([{ ...fromSlack, replyApproved: false }, { ...fromSlack, replyApproved: undefined }]), []); // no yes from the user, no message
-  assert.deepEqual(awaitingReply([a, fromSlack, { ...fromSlack, repliedAt: now }, { ...fromSlack, completed: false }]), [fromSlack]);
   const sums = {};
   assert.equal(setSummary(sums, '2026-11-12', ' Did A.\\nDid B. ', now).text, 'Did A.\nDid B.');
   assert.throws(() => setSummary(sums, '12-11-2026', 'x'), /real date/);
@@ -175,7 +166,7 @@ async function main() {
   const opts = parseArgs(process.argv.slice(2));
   const [cmd, arg] = opts._;
   if (cmd === 'selftest') return selftest();
-  if (!['list', 'today', 'add', 'edit', 'done', 'replies', 'replied', 'summaries', 'summary'].includes(cmd)) return console.log(USAGE);
+  if (!['list', 'today', 'add', 'edit', 'done', 'summaries', 'summary'].includes(cmd)) return console.log(USAGE);
   if (opts._.length > WORDS[cmd]) throw new Error(`Too many words after "${cmd}": put the text in one pair of double quotes and use no double quotes inside it`);
 
   const cfg = loadConfig();
@@ -204,14 +195,6 @@ async function main() {
     task.updatedAt = Date.now();
     await writeData(cfg, data);
     console.log('Updated: ' + show(task));
-  } else if (cmd === 'replies') {
-    console.log(awaitingReply(data.tasks).map(show).join('\n') || 'Nobody is waiting for an answer.');
-  } else if (cmd === 'replied') {
-    const task = awaitingReply(data.tasks).find(t => t.id === arg);
-    if (!task) throw new Error(`No confirmed, unanswered task has id ${arg}; see "replies"`);
-    task.updatedAt = task.repliedAt = Date.now();
-    await writeData(cfg, data);
-    console.log('Marked as answered: ' + task.title);
   } else if (cmd === 'summaries') {
     const days = Object.keys(data.summaries).sort().reverse();
     console.log(days.map(d => `${d}  ${data.summaries[d].pasted ? 'pasted' : 'not pasted yet'}`).join('\n') || 'No summaries yet.');

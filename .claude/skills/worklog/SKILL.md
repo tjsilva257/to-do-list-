@@ -1,6 +1,6 @@
 ---
 name: worklog
-description: Writes the user's daily work summary (for an internship or work log form) and keeps their SyncTask to-do list up to date. Use when the user asks "what did I work on today", wants a daily summary, log or stagelog to copy-paste, asks to add, list or complete to-dos or put the current project/work in their to-do list, or wants to tell the people who asked that their to-dos are done.
+description: Writes the user's daily work summary (for an internship or work log form) and keeps their SyncTask to-do list up to date. Use when the user asks "what did I work on today", wants a daily summary, log or stagelog to copy-paste, asks to add, list or complete to-dos or put the current project/work in their to-do list.
 ---
 
 # Worklog and to-do list
@@ -13,13 +13,11 @@ TODO today [YYYY-MM-DD]
 TODO add "Title" [--cat Work] [--prio low|medium|high] [--due YYYY-MM-DD] [--notes "..."] [--source https://...] [--done]
 TODO edit "<id or part of title>" [--notes "..."] [--source https://...]
 TODO done "<id or part of title>"
-TODO replies
-TODO replied "<task id>"
 TODO summaries
 TODO summary YYYY-MM-DD "Text"
 ```
 
-If the tool says `~/.synctask.json` is missing, tell the user what it asks for and stop. Never ask the user to paste a token into the chat, and never write a token or gist ID into a file inside a repository.
+If the tool says `~/.synctask.json` is missing, tell the user what it asks for and stop. Slack is read-only here: never send, draft or schedule a Slack message for the user. Never ask the user to paste a token into the chat, and never write a token or gist ID into a file inside a repository.
 
 ## Putting work in the to-do list
 
@@ -29,15 +27,6 @@ If the tool says `~/.synctask.json` is missing, tell the user what it asks for a
 - Work that is already finished: add it with `--done`, or `TODO done` the existing task. Check `TODO list` first so you do not add a duplicate.
 - Planned work: add it open, with `--due` only if the user gave a date.
 - Notes: the first line is a one-sentence summary; after a blank line, explain what to do and how in a few numbered steps (write `\n` for a line break). If the task came from a message, pass its link as `--source`.
-
-## Telling the sender a to-do is done
-
-When the user asks to answer the people whose to-dos are finished (or as part of the daily summary):
-
-1. `TODO replies` lists completed to-dos that came from a message (`source`), that the user confirmed in the app ("are you sure this is done?" → yes) and that were not answered yet. A to-do that is not in this list gets no message; never complete or approve one yourself to make it appear.
-2. For each one, open the thread behind the source link. If the user already said there that it is done, only run `TODO replied "<task id>"`.
-3. Otherwise write a one- or two-sentence reply in the language of the original message and show it to the user. Create it as a draft in that thread, or send it only after the user says yes to that specific text.
-4. Then run `TODO replied "<task id>"`.
 
 ## Daily summary
 
